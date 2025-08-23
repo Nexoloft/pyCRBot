@@ -22,8 +22,8 @@ PLAY_AREA = {
 
 # Reference images
 REF_IMAGES = {
-    "ok_button": "OK.png",
-    "battle_button": "Battle.png",
+    "ok_button": "templates/OK.png",
+    "battle_button": "templates/Battle.png",
     "elixir": "Elixir.png"
 }
 
