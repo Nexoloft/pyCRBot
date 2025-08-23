@@ -1,29 +1,8 @@
-"""
-Enhanced Clash Royale Bot with Strategic Card Placement
-=======================================================
-
-This bot includes advanced features inspired by py-clash-bot:
-- Strategic card placement based on card types
-- Elixir management and detection
-- Time-based battle strategies (defensive -> aggressive)
-- Smart card selection (avoiding repetition)
-- Side preference management
-- Enhanced battle loop with dynamic timing
-
-Key Improvements:
-1. Card Recognition: Detects which cards are available vs on cooldown
-2. Elixir Detection: Waits for sufficient elixir before playing
-3. Strategic Zones: Places cards in optimal positions based on game phase
-4. Adaptive Timing: Changes play speed based on battle progression
-5. Smart Selection: Avoids playing the same cards repeatedly
-"""
-
 import random
 import time
 import subprocess
 import cv2
 import os
-import numpy as np
 
 # Card coordinates
 CARD_SLOTS = [
@@ -33,45 +12,13 @@ CARD_SLOTS = [
     (815, 1409)    # Card 4
 ]
 
-# Play area coordinates - Enhanced with strategic zones
+# Play area coordinates
 PLAY_AREA = {
     "min_x": 67,
     "max_x": 822,
     "min_y": 892,
     "max_y": 1180
 }
-
-# Strategic placement zones
-STRATEGIC_ZONES = {
-    "defensive": {
-        "left": {"x": (100, 300), "y": (1050, 1150)},
-        "right": {"x": (550, 750), "y": (1050, 1150)},
-        "center": {"x": (350, 500), "y": (1100, 1180)}
-    },
-    "offensive": {
-        "left": {"x": (100, 350), "y": (920, 1000)},
-        "right": {"x": (500, 750), "y": (920, 1000)},
-        "center": {"x": (380, 470), "y": (900, 980)}
-    },
-    "bridge": {
-        "left": {"x": (200, 280), "y": (980, 1020)},
-        "right": {"x": (570, 650), "y": (980, 1020)}
-    }
-}
-
-# Card type classifications for strategic placement
-CARD_TYPES = {
-    "spell": ["fireball", "zap", "lightning", "arrows", "freeze", "poison", "rocket"],
-    "building": ["cannon", "tesla", "inferno_tower", "xbow", "mortar"],
-    "tank": ["giant", "golem", "lava_hound", "pekka", "mega_knight"],
-    "support": ["wizard", "witch", "musketeer", "archers", "baby_dragon"],
-    "swarm": ["skeleton_army", "goblin_gang", "minion_horde", "barbarians"],
-    "win_condition": ["hog_rider", "balloon", "miner", "goblin_barrel"]
-}
-
-# Elixir detection coordinates and color
-ELIXIR_BAR_COORDS = [(96, 1316), (150, 1316), (200, 1316), (250, 1316)]
-ELIXIR_COLOR = (255, 43, 255)  # Purple elixir color
 
 # Reference images
 REF_IMAGES = {
@@ -85,154 +32,6 @@ CONFIDENCE_THRESHOLD = 0.8
 
 # Timeout for inactivity (30 seconds)
 INACTIVITY_TIMEOUT = 30
-
-# Configuration options
-ENHANCED_MODE = True  # Set to False to use original simple mode
-DEBUG_MODE = False    # Set to True for detailed logging
-ELIXIR_DETECTION = True  # Set to False to disable elixir waiting
-
-# Battle strategy variables
-battle_start_time = 0
-last_three_cards = []
-current_side_preference = "left"
-cards_played = 0
-
-def detect_elixir_level():
-    """Detect current elixir level by checking elixir bar"""
-    screenshot = take_screenshot()
-    if screenshot is None:
-        return 0
-    
-    elixir_count = 0
-    for coord in ELIXIR_BAR_COORDS:
-        pixel = screenshot[coord[1], coord[0]]
-        # Check if pixel is purple (elixir color)
-        if np.abs(pixel[0] - ELIXIR_COLOR[2]) < 30 and \
-           np.abs(pixel[1] - ELIXIR_COLOR[1]) < 30 and \
-           np.abs(pixel[2] - ELIXIR_COLOR[0]) < 30:
-            elixir_count += 1
-    
-    return min(elixir_count, 10)  # Cap at 10 elixir
-
-def check_card_availability():
-    """Check which cards are ready to play (not on cooldown)"""
-    screenshot = take_screenshot()
-    if screenshot is None:
-        return []
-    
-    available_cards = []
-    for i, card_pos in enumerate(CARD_SLOTS):
-        # Check if card is not grayed out (available to play)
-        # Sample a few pixels around the card to determine availability
-        sample_points = [
-            (card_pos[0] - 20, card_pos[1] - 30),
-            (card_pos[0] + 20, card_pos[1] - 30),
-            (card_pos[0], card_pos[1] - 40)
-        ]
-        
-        brightness_sum = 0
-        for point in sample_points:
-            if 0 <= point[0] < screenshot.shape[1] and 0 <= point[1] < screenshot.shape[0]:
-                pixel = screenshot[point[1], point[0]]
-                brightness = int(pixel[0]) + int(pixel[1]) + int(pixel[2])
-                brightness_sum += brightness
-        
-        avg_brightness = brightness_sum / len(sample_points)
-        # If brightness is above threshold, card is available
-        if avg_brightness > 300:  # Adjust threshold as needed
-            available_cards.append(i)
-    
-    return available_cards
-
-def select_strategic_card(available_cards):
-    """Select card strategically, avoiding recent cards"""
-    global last_three_cards
-    
-    if not available_cards:
-        return None
-    
-    # Filter out recently used cards
-    preferred_cards = [card for card in available_cards if card not in last_three_cards]
-    
-    # If all cards were recently used, avoid only the most recent one
-    if not preferred_cards and last_three_cards:
-        preferred_cards = [card for card in available_cards if card != last_three_cards[-1]]
-    
-    # If still no preference, use any available card
-    if not preferred_cards:
-        preferred_cards = available_cards
-    
-    selected_card = random.choice(preferred_cards)
-    
-    # Update recent cards list
-    if selected_card not in last_three_cards:
-        last_three_cards.append(selected_card)
-    if len(last_three_cards) > 3:
-        last_three_cards.pop(0)
-    
-    return selected_card
-
-def get_strategic_placement(card_index, elapsed_time):
-    """Get strategic placement coordinates based on card type and game state"""
-    global current_side_preference
-    
-    # Determine strategy phase based on elapsed time
-    if elapsed_time < 30:  # Early game - defensive
-        strategy = "defensive"
-    elif elapsed_time < 120:  # Mid game - balanced
-        strategy = "offensive" if random.random() > 0.4 else "defensive"
-    else:  # Late game - aggressive
-        strategy = "offensive"
-    
-    # Alternate side preference periodically
-    if random.random() < 0.3:  # 30% chance to switch sides
-        current_side_preference = "right" if current_side_preference == "left" else "left"
-    
-    # Get strategic zone
-    if strategy in STRATEGIC_ZONES:
-        zones = STRATEGIC_ZONES[strategy]
-        
-        # Choose zone based on strategy
-        if strategy == "defensive":
-            # Prefer center and back areas for defense
-            zone_choice = random.choices(
-                ["center", current_side_preference],
-                weights=[0.6, 0.4]
-            )[0]
-        else:
-            # Prefer sides and bridge for offense
-            zone_choice = random.choices(
-                [current_side_preference, "center"],
-                weights=[0.7, 0.3]
-            )[0]
-        
-        if zone_choice in zones:
-            zone = zones[zone_choice]
-            x = random.randint(zone["x"][0], zone["x"][1])
-            y = random.randint(zone["y"][0], zone["y"][1])
-            return (x, y)
-    
-    # Fallback to original random placement
-    place_x = random.randint(PLAY_AREA["min_x"], PLAY_AREA["max_x"])
-    place_y = random.randint(PLAY_AREA["min_y"], PLAY_AREA["max_y"])
-    return (place_x, place_y)
-
-def wait_for_elixir(min_elixir=3, timeout=10):
-    """Wait until we have enough elixir to play a card"""
-    start_time = time.time()
-    
-    while time.time() - start_time < timeout:
-        current_elixir = detect_elixir_level()
-        if current_elixir >= min_elixir:
-            return True
-        
-        # Check if still in battle
-        if not is_in_battle():
-            return False
-            
-        time.sleep(0.5)
-    
-    return False  # Timeout
 
 def restart_app():
     """Restart Clash Royale app"""
@@ -377,96 +176,26 @@ def tap_screen(x, y):
         return False
 
 def play_card():
-    """Select and place a card strategically"""
-    global battle_start_time, cards_played
-    
-    # Initialize battle start time if not set
-    if battle_start_time == 0:
-        battle_start_time = time.time()
-    
-    # First check if we're still in battle
+    """Select and place a random card (only if in battle)"""
+    # First check if we're still in battle using pixel detection
     if not is_in_battle():
         return False
     
-    # Check available cards
-    available_cards = check_card_availability()
-    if not available_cards:
-        print("No cards available to play")
-        return False
+    # Select a random card
+    card_pos = random.choice(CARD_SLOTS)
     
-    # Calculate elapsed time for strategy
-    elapsed_time = time.time() - battle_start_time
-    
-    # Wait for minimum elixir
-    min_elixir = 3 if elapsed_time < 60 else 2  # More aggressive later in game
-    if not wait_for_elixir(min_elixir, timeout=5):
-        print("Not enough elixir or battle ended")
-        return False
-    
-    # Select card strategically
-    card_index = select_strategic_card(available_cards)
-    if card_index is None:
-        return False
-    
-    card_pos = CARD_SLOTS[card_index]
-    
-    # Tap the card
     if not tap_screen(card_pos[0], card_pos[1]):
         return False
     
     time.sleep(0.3)
     
-    # Get strategic placement
-    place_x, place_y = get_strategic_placement(card_index, elapsed_time)
+    # Generate a random position within the play area
+    place_x = random.randint(PLAY_AREA["min_x"], PLAY_AREA["max_x"])
+    place_y = random.randint(PLAY_AREA["min_y"], PLAY_AREA["max_y"])
     
-    print(f"Playing card {card_index + 1} at strategic position ({place_x}, {place_y}) - Elapsed: {elapsed_time:.1f}s")
-    
-    # Place the card
     if not tap_screen(place_x, place_y):
         return False
     
-    cards_played += 1
-    return True
-
-def enhanced_battle_loop():
-    """Enhanced battle loop with strategic card placement"""
-    global battle_start_time, cards_played
-    
-    battle_start_time = time.time()
-    cards_played = 0
-    
-    print("Starting enhanced battle loop with strategic card placement...")
-    
-    while True:
-        # Check if battle ended
-        if not is_in_battle():
-            print("Battle ended - exiting loop")
-            break
-        
-        # Check for battle timeout (5 minutes max)
-        elapsed_time = time.time() - battle_start_time
-        if elapsed_time > 300:
-            print("Battle timeout reached")
-            break
-        
-        # Attempt to play a card
-        if play_card():
-            print(f"Successfully played card #{cards_played}")
-            
-            # Dynamic delay based on game phase
-            if elapsed_time < 30:
-                delay = random.uniform(2, 4)  # Slower start
-            elif elapsed_time < 120:
-                delay = random.uniform(1.5, 3)  # Medium pace
-            else:
-                delay = random.uniform(0.8, 2)  # Faster endgame
-            
-            time.sleep(delay)
-        else:
-            # If can't play card, wait a bit and try again
-            time.sleep(1)
-    
-    print(f"Battle completed! Total cards played: {cards_played}")
     return True
 
 def wait_for_battle_end():
@@ -585,9 +314,7 @@ def wait_for_battle_start():
     return False
 
 def main():
-    global ENHANCED_MODE, battle_start_time, cards_played
-    
-    print("Clash Royale Bot with Enhanced Strategic Placement")
+    print("Clash Royale Bot with Image Recognition")
     
     # Check if we're in test mode (no ADB required)
     import sys
@@ -595,7 +322,7 @@ def main():
     
     if test_mode:
         print("Running in TEST MODE (no ADB required)")
-        print("Testing enhanced image recognition functionality...")
+        print("Testing image recognition functionality...")
         
         # Test if template images exist
         for name, path in REF_IMAGES.items():
@@ -608,34 +335,17 @@ def main():
             else:
                 print(f"✗ {name}: {path} - File not found")
         
-        print("\nEnhanced Bot Configuration:")
-        print(f"- Enhanced Mode: {'ENABLED' if ENHANCED_MODE else 'DISABLED'}")
-        print(f"- Debug Mode: {'ENABLED' if DEBUG_MODE else 'DISABLED'}")
-        print(f"- Elixir Detection: {'ENABLED' if ELIXIR_DETECTION else 'DISABLED'}")
+        print("\nConfiguration:")
         print(f"- Confidence threshold: {CONFIDENCE_THRESHOLD}")
         print(f"- Card slots: {len(CARD_SLOTS)} positions")
-        print(f"- Strategic zones: {len(STRATEGIC_ZONES)} zone types")
         print(f"- Play area: {PLAY_AREA['max_x'] - PLAY_AREA['min_x']}x{PLAY_AREA['max_y'] - PLAY_AREA['min_y']} pixels")
         print(f"- Template images: {len(REF_IMAGES)} loaded")
         
-        print("\nStrategic Improvements:")
-        print("✓ Smart card selection (avoids repetition)")
-        print("✓ Elixir management and detection")
-        print("✓ Time-based strategy (defensive → aggressive)")
-        print("✓ Strategic placement zones")
-        print("✓ Side preference management")
-        print("✓ Enhanced battle loop with dynamic timing")
-        
-        print("\nCard Type Classifications:")
-        for card_type, count in [(t, len(cards)) for t, cards in CARD_TYPES.items()]:
-            print(f"- {card_type.title()}: {count} cards")
-        
-        print("\nTo run the enhanced bot:")
+        print("\nTo run the full bot:")
         print("1. Install ADB: https://developer.android.com/studio/releases/platform-tools")
         print("2. Add ADB to your system PATH")
         print("3. Start BlueStacks")
         print("4. Run: python ClashBot.py")
-        print("\nThe bot will now play much more strategically, similar to py-clash-bot!")
         return
     
     if not connect_bluestacks():
@@ -685,56 +395,41 @@ def main():
             
             # Now play cards during battle until OK button appears
             cards_played = 0
-            enhanced_mode_for_battle = ENHANCED_MODE  # Local copy to avoid modifying global
+            print("Playing cards until battle ends...")
+            battle_start_time = time.time()
             
-            if enhanced_mode_for_battle:
-                print("Starting strategic battle with enhanced card placement...")
+            while True:
+                # Check if OK button is visible (battle ended)
+                ok_position, confidence = find_template("ok_button")
+                if ok_position:
+                    print(f"Battle ended! OK button detected (confidence: {confidence:.2f})")
+                    last_activity_time = time.time()
+                    break
                 
-                # Use enhanced battle loop with strategic placement
-                if enhanced_battle_loop():
-                    print("Enhanced battle completed successfully!")
+                # Check if we're still in battle using pixel detection
+                if not is_in_battle():
+                    print("Battle ended - white pixel no longer detected")
+                    last_activity_time = time.time()
+                    break
+                
+                # Check for inactivity timeout during battle
+                if time.time() - battle_start_time > INACTIVITY_TIMEOUT:
+                    print(f"Battle seems stuck for {INACTIVITY_TIMEOUT} seconds, restarting app...")
+                    restart_app()
+                    last_activity_time = time.time()
+                    first_battle = True
+                    break
+                
+                if play_card():
+                    cards_played += 1
+                    print(f"Successfully played card {cards_played}")
+                    last_activity_time = time.time()
+                    battle_start_time = time.time()  # Reset battle timer on successful card play
+                    delay = random.uniform(1, 3)
+                    time.sleep(delay)
                 else:
-                    print("Enhanced battle loop failed, falling back to basic mode")
-                    enhanced_mode_for_battle = False  # Disable for this battle only
-            
-            if not enhanced_mode_for_battle:
-                print("Using original battle mode...")
-                # Original battle loop
-                battle_start_time = time.time()
-                
-                while True:
-                    # Check if OK button is visible (battle ended)
-                    ok_position, confidence = find_template("ok_button")
-                    if ok_position:
-                        print(f"Battle ended! OK button detected (confidence: {confidence:.2f})")
-                        last_activity_time = time.time()
-                        break
-                    
-                    # Check if we're still in battle using pixel detection
-                    if not is_in_battle():
-                        print("Battle ended - white pixel no longer detected")
-                        last_activity_time = time.time()
-                        break
-                    
-                    # Check for inactivity timeout during battle
-                    if time.time() - battle_start_time > INACTIVITY_TIMEOUT:
-                        print(f"Battle seems stuck for {INACTIVITY_TIMEOUT} seconds, restarting app...")
-                        restart_app()
-                        last_activity_time = time.time()
-                        first_battle = True
-                        break
-                    
-                    # Use original simple play_card function
-                    if play_card():
-                        cards_played += 1
-                        print(f"Successfully played card {cards_played}")
-                        last_activity_time = time.time()
-                        battle_start_time = time.time()  # Reset battle timer on successful card play
-                        delay = random.uniform(1, 3)
-                        time.sleep(delay)
-                    else:
-                        print("Failed to play card, continuing...")
-                        time.sleep(1)  # Short delay before trying again
+                    print(f"Failed to play card, continuing...")
+                    time.sleep(1)  # Short delay before trying again
             
             print(f"Finished battle after playing {cards_played} cards")
             
