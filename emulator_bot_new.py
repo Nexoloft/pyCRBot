@@ -10,8 +10,8 @@ from battle_logic import BattleLogic
 from battle_strategy import BattleStrategy
 from logger import Logger
 from config import (
-    CONFIDENCE_THRESHOLD, CARD_SELECTION_DELAY,
-    FALLBACK_POSITIONS, CARD_SLOTS
+    CONFIDENCE_THRESHOLD, CARD_SELECTION_DELAY, CARD_COMBO_DELAY,
+    FALLBACK_POSITIONS, SCREENSHOT_DELAY, CLASH_ROYALE_PACKAGE, CARD_SLOTS
 )
 
 
@@ -56,7 +56,7 @@ class EmulatorBot:
     def restart_app(self):
         """Restart Clash Royale app using emulator controller"""
         self.logger.change_status("Restarting Clash Royale app...")
-        success = self.emulator.restart_app("com.supercell.clashroyale")
+        success = self.emulator.restart_app(CLASH_ROYALE_PACKAGE)
         if success:
             self.logger.add_restart()
             self.logger.log("App restarted successfully")
@@ -106,9 +106,8 @@ class EmulatorBot:
         self.logger.change_status("Waiting for battle to start...")
         start_time = time.time()
         fallback_triggered = False
-        timeout = 45  # Increased timeout from 30 to 45 seconds
         
-        while time.time() - start_time < timeout:
+        while time.time() - start_time < 30:  # Max 30 seconds wait
             if not self.running:
                 return False
                 
@@ -134,7 +133,7 @@ class EmulatorBot:
             self.logger.change_status(f"Battle not detected yet, waiting... ({elapsed:.1f}s)")
             time.sleep(1)
         
-        self.logger.log(f"Timeout waiting for battle to start (waited {timeout}s)")
+        self.logger.log("Timeout waiting for battle to start")
         return False
     
     def fallback_click_sequence(self):
@@ -161,20 +160,6 @@ class EmulatorBot:
                 if self.is_in_battle():
                     self.logger.log(f"✓ Battle detected after fallback click {i+1} wait!")
                     return True
-        
-        # After fallback clicks, wait and check for battle for a longer period
-        self.logger.log("Fallback clicks completed, checking for battle...")
-        fallback_check_start = time.time()
-        
-        while time.time() - fallback_check_start < 15:  # Extended wait time to 15 seconds
-            if not self.running:
-                return False
-                
-            if self.is_in_battle():
-                self.logger.log("✓ Battle detected after extended fallback wait!")
-                return True
-            
-            time.sleep(1)
         
         self.logger.log("No battle detected after fallback clicks")
         return False

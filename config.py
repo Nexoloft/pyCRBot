@@ -40,6 +40,20 @@ CONFIDENCE_THRESHOLD = 0.8
 # Timeout for inactivity (30 seconds)
 INACTIVITY_TIMEOUT = 30
 
+# Timing delays
+CARD_SELECTION_DELAY = 0.15
+CARD_COMBO_DELAY = 0.4
+SCREENSHOT_DELAY = 0.05
+ELIXIR_CHECK_INTERVAL = 2
+DOUBLE_ELIXIR_CHECK_INTERVAL = 3
+
+# Fallback positions for different situations
+FALLBACK_POSITIONS = {
+    "battle_start": (96, 1316),
+    "deadspace": (20, 200),
+    "battle_button": (540, 1200)
+}
+
 # Elixir detection coordinates
 ELIXIR_COORDS = [
     [149, 613],  # 1 elixir

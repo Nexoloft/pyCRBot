@@ -11,11 +11,9 @@ class BattleRunner:
     Handles the main battle loop logic using PyClashBot patterns
     """
     
-    def __init__(self, bot, shutdown_check_func, max_battles=0):
+    def __init__(self, bot, shutdown_check_func):
         self.bot = bot
         self.shutdown_check = shutdown_check_func
-        self.max_battles = max_battles
-        self.battle_count = 0
         self.instance_name = bot.instance_name
         self.logger = bot.logger
     
@@ -24,17 +22,10 @@ class BattleRunner:
         self.logger.change_status("Starting enhanced bot loop...")
         game_round = 1
         first_battle = True
-        consecutive_errors = 0
-        max_consecutive_errors = 5
         
-        while self.bot.running and not self.shutdown_check():
-            try:
-                # Check battle limit
-                if self.max_battles > 0 and self.battle_count >= self.max_battles:
-                    self.logger.change_status(f"Reached battle limit ({self.max_battles}). Stopping.")
-                    break
-                    
-                self.logger.change_status(f"--- Starting round {game_round} (Battle {self.battle_count + 1}) ---")
+        try:
+            while self.bot.running and not self.shutdown_check():
+                self.logger.change_status(f"--- Starting round {game_round} ---")
                 last_activity_time = time.time()
                 
                 # For the first battle, start from home page
@@ -45,127 +36,52 @@ class BattleRunner:
                             self.logger.log(f"No activity for {INACTIVITY_TIMEOUT} seconds, restarting app...")
                             self.bot.restart_app()
                             last_activity_time = time.time()
-                        continue  # Continue trying instead of breaking the loop
+                        break
                     first_battle = False
                     last_activity_time = time.time()
                 
                 # Wait for battle to actually start
-                if not self.bot.wait_for_battle_start(use_fallback=True):
+                if not self.bot.wait_for_battle_start(use_fallback=first_battle):
                     self.logger.log("Battle didn't start properly, trying to recover...")
-                    
-                    # Try additional recovery steps before checking timeout
-                    recovery_attempts = 0
-                    max_recovery_attempts = 3
-                    
-                    while recovery_attempts < max_recovery_attempts and self.bot.running and not self.shutdown_check():
-                        recovery_attempts += 1
-                        self.logger.log(f"Recovery attempt {recovery_attempts}/{max_recovery_attempts}")
-                        
-                        # Try clicking battle button as fallback
-                        self.bot.tap_screen(540, 1200)  # Battle button approximate position
-                        time.sleep(2)
-                        
-                        # Check if battle started after recovery click
-                        if self.bot.wait_for_battle_start(use_fallback=False):
-                            self.logger.log("✓ Battle started after recovery click!")
-                            break
-                        
-                        # Try different recovery positions
-                        if recovery_attempts == 2:
-                            self.logger.log("Trying additional recovery clicks...")
-                            self.bot.tap_screen(400, 1100)  # Alternative button position
-                            time.sleep(1)
-                            self.bot.tap_screen(540, 1000)  # Another alternative
-                            time.sleep(2)
-                    else:
-                        # If recovery failed, check timeout
-                        if time.time() - last_activity_time > INACTIVITY_TIMEOUT:
-                            self.logger.log(f"No activity for {INACTIVITY_TIMEOUT} seconds, restarting app...")
-                            self.bot.restart_app()
-                            last_activity_time = time.time()
-                            first_battle = True
+                    if time.time() - last_activity_time > INACTIVITY_TIMEOUT:
+                        self.logger.log(f"No activity for {INACTIVITY_TIMEOUT} seconds, restarting app...")
+                        self.bot.restart_app()
+                        last_activity_time = time.time()
+                        first_battle = True
                         continue
+                    # Try clicking battle button as fallback
+                    self.bot.tap_screen(540, 1200)  # Battle button approximate position
+                    time.sleep(1)
+                    continue
                 
                 last_activity_time = time.time()
                 
                 # Start battle strategy timing
                 self.bot.battle_strategy.start_battle()
-                self.battle_count += 1  # Increment battle counter
-                self.logger.log(f"Battle {self.battle_count} started!")
                 
                 # Enhanced battle loop with strategy
-                battle_loop_attempts = 0
-                max_battle_loop_attempts = 2
-                
-                while battle_loop_attempts < max_battle_loop_attempts:
-                    battle_loop_attempts += 1
-                    self.logger.log(f"Battle loop attempt {battle_loop_attempts}/{max_battle_loop_attempts}")
-                    
-                    if self._enhanced_fight_loop():
-                        break
-                    else:
-                        self.logger.log(f"Battle loop failed (attempt {battle_loop_attempts}/{max_battle_loop_attempts})")
-                        if battle_loop_attempts < max_battle_loop_attempts:
-                            self.logger.log("Retrying battle loop...")
-                            time.sleep(2)  # Brief pause before retry
-                        else:
-                            self.logger.log("Battle loop failed after all attempts, restarting...")
-                            self.bot.restart_app()
-                            last_activity_time = time.time()
-                            first_battle = True
-                            continue
+                if not self._enhanced_fight_loop():
+                    self.logger.log("Battle loop failed, restarting...")
+                    self.bot.restart_app()
+                    last_activity_time = time.time()
+                    first_battle = True
+                    continue
                 
                 # Wait for battle to end and handle post-battle
-                battle_end_attempts = 0
-                max_battle_end_attempts = 3
-                
-                while battle_end_attempts < max_battle_end_attempts:
-                    battle_end_attempts += 1
-                    self.logger.log(f"Battle end attempt {battle_end_attempts}/{max_battle_end_attempts}")
-                    
-                    if self._handle_battle_end():
-                        self.logger.log("Successfully handled post-battle sequence")
-                        break
-                    else:
-                        self.logger.log("Issues with post-battle sequence, retrying...")
-                        if battle_end_attempts < max_battle_end_attempts:
-                            # Try some recovery clicks before next attempt
-                            self.bot.tap_screen(540, 1100)  # OK button fallback
-                            time.sleep(1)
-                            self.bot.tap_screen(540, 1200)  # Battle button fallback
-                            time.sleep(2)
-                        else:
-                            self.logger.log("Failed to handle battle end after all attempts, restarting app...")
-                            self.bot.restart_app()
-                            last_activity_time = time.time()
-                            first_battle = True
-                            continue
+                if not self._handle_battle_end():
+                    self.logger.log("Failed to handle battle end properly")
+                    self.bot.restart_app()
+                    last_activity_time = time.time()
+                    first_battle = True
+                    continue
                 
                 game_round += 1
-                consecutive_errors = 0  # Reset error counter on successful round
                 
-            except Exception as e:
-                consecutive_errors += 1
-                self.logger.log(f"Bot loop error #{consecutive_errors}: {e}")
-                self.logger.add_failure()
-                
-                if consecutive_errors >= max_consecutive_errors:
-                    self.logger.log(f"Too many consecutive errors ({consecutive_errors}), stopping bot")
-                    break
-                
-                # Try to recover from error
-                self.logger.log("Attempting to recover from bot loop error...")
-                try:
-                    self.bot.restart_app()
-                    first_battle = True
-                    time.sleep(5)  # Give some time for recovery
-                    self.logger.log("Recovery attempted, continuing bot loop...")
-                    continue
-                except Exception as recovery_error:
-                    self.logger.log(f"Recovery failed: {recovery_error}")
-                    break  # Exit if recovery also fails
-        
-        self.logger.change_status("Bot loop stopped")
+        except Exception as e:
+            self.logger.log(f"Bot loop error: {e}")
+            self.logger.add_failure()
+        finally:
+            self.logger.change_status("Bot loop stopped")
     
     def _enhanced_fight_loop(self):
         """Enhanced fight loop with PyClashBot strategy patterns"""

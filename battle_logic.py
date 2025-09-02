@@ -195,3 +195,19 @@ class BattleLogic:
         if current_elixir is None:
             return True  # Play if we can't detect elixir
         return current_elixir >= min_elixir
+    
+    def check_which_cards_are_available(self, screenshot):
+        """Check which card slots have cards available to play"""
+        if screenshot is None:
+            return []
+        
+        available_cards = []
+        
+        # Check each card slot for availability (simplified version)
+        # In a real implementation, you'd check for visual indicators of card readiness
+        for i in range(4):  # 4 card slots
+            # For now, assume all cards are available (you can enhance this with actual detection)
+            # You could check pixel colors around card slots to determine availability
+            available_cards.append(i)
+        
+        return available_cards
