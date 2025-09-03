@@ -201,7 +201,7 @@ class EmulatorBot:
             
             # If battle button not found, click the screen and wait 1 second before trying again
             self.logger.change_status("Battle button not found, clicking screen to refresh...")
-            self.tap_screen(540, 960)  # Click center of screen to refresh
+            self.tap_screen(209, 316)  # Click center of screen to refresh (center of 419x633)
             time.sleep(1)  # Wait 1 second between clicks as requested
         
         self.logger.log("Timeout: Could not find Battle button on home page after continuous clicking")

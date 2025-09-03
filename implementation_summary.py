@@ -11,20 +11,20 @@ CHANGES MADE:
 1. Modified `_handle_battle_end()` in battle_runner.py:
    - After clicking OK button and transitioning to home screen
    - Continuously searches for battle button for up to 30 seconds
-   - If battle button not found, clicks center of screen (540, 960) to refresh
+   - If battle button not found, clicks center of screen (209, 316) to refresh
    - Waits exactly 1 second between clicks as requested
-   - Falls back to default battle button position (540, 1200) if timeout reached
+   - Falls back to default battle button position (209, 600) if timeout reached
 
 2. Modified `start_first_battle()` in emulator_bot.py:
    - When starting the first battle from home page
    - Continuously searches for battle button for up to 30 seconds  
-   - If battle button not found, clicks center of screen (540, 960) to refresh
+   - If battle button not found, clicks center of screen (209, 316) to refresh
    - Waits exactly 1 second between clicks as requested
    - Logs timeout if battle button never found
 
 KEY FEATURES:
 - Continuous clicking every 1 second when battle button not found
-- Screen refresh clicks at center position (540, 960)
+- Screen refresh clicks at center position (209, 316) - properly scaled for 419x633 screen
 - Proper timeout handling (30 seconds)
 - Detailed logging of search progress
 - Fallback to known battle button positions
@@ -37,10 +37,10 @@ BEHAVIOR FLOW:
    a. Take screenshot
    b. Search for battle button template
    c. If found: click and return success
-   d. If not found: click center screen (540, 960)
+   d. If not found: click center screen (209, 316)
    e. Wait 1 second
    f. Repeat until timeout (30 seconds)
-4. On timeout: try fallback position (540, 1200)
+4. On timeout: try fallback position (209, 600)
 
 This ensures the bot can handle various UI states and popup conditions
 that might prevent the battle button from being immediately visible.
