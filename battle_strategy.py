@@ -8,6 +8,9 @@ import collections
 from typing import Literal
 from config import PLAY_AREA
 
+# Bridge Y coordinate range for proper bridge placement
+BRIDGE_Y_RANGE = (279, 295)  # Centered around Y=287
+
 
 class BattleStrategy:
     """
@@ -121,7 +124,7 @@ class BattleStrategy:
         if phase == "early":
             if random.randint(0, 2) == 0:  # 33% chance for bridge play
                 place_x = random.choice([120, 300])  # Left or right bridge
-                place_y = random.randint(PLAY_AREA["min_y"] + 20, PLAY_AREA["max_y"] - 20)
+                place_y = random.randint(*BRIDGE_Y_RANGE)  # Use actual bridge Y coordinates
             else:
                 # Defensive positioning
                 place_x = random.randint(PLAY_AREA["min_x"] + 30, PLAY_AREA["max_x"] - 30)
@@ -131,7 +134,7 @@ class BattleStrategy:
         elif phase in ["double", "triple"]:
             if random.randint(0, 1) == 0:  # 50% chance for bridge play
                 place_x = random.choice([120, 300])  # Bridge positions
-                place_y = random.randint(PLAY_AREA["min_y"], PLAY_AREA["max_y"])
+                place_y = random.randint(*BRIDGE_Y_RANGE)  # Use actual bridge Y coordinates
             else:
                 # Full area usage
                 place_x = random.randint(PLAY_AREA["min_x"], PLAY_AREA["max_x"])
@@ -141,7 +144,7 @@ class BattleStrategy:
         else:
             if random.randint(0, 2) == 0:  # 33% chance for bridge play
                 place_x = random.choice([120, 300])
-                place_y = random.randint(PLAY_AREA["min_y"], PLAY_AREA["max_y"])
+                place_y = random.randint(*BRIDGE_Y_RANGE)  # Use actual bridge Y coordinates
             else:
                 place_x = random.randint(PLAY_AREA["min_x"], PLAY_AREA["max_x"])
                 place_y = random.randint(PLAY_AREA["min_y"], PLAY_AREA["max_y"])
