@@ -31,7 +31,8 @@ REF_IMAGES = {
     "upgrade_possible": "templates/upgrade_possible.png",
     "upgrade_button": "templates/upgrade_button.png",
     "confirm": "templates/Confirm.png",
-    "2xElixir": "templates/2xElixir.png"
+    "2xElixir": "templates/2xElixir.png",
+    "ClaimRewards": "templates/ClaimRewards.png"
 }
 
 # Confidence threshold for image matching

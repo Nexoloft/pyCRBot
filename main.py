@@ -48,6 +48,7 @@ def print_help():
     print("  python main.py              # Run normal battle bot")
     print("  python main.py --upgrade    # Run card upgrade bot")
     print("  python main.py -u           # Run card upgrade bot (short)")
+    print("  python main.py --battlepass # Run battlepass claiming bot")
     print("  python main.py --help       # Show this help")
 
 
@@ -93,6 +94,50 @@ def run_upgrade_mode(instances):
             executor.shutdown(wait=True)
             
             print("All upgrade bots stopped. Goodbye!")
+
+
+def run_battlepass_mode(instances):
+    """Run the bot in battlepass claiming mode"""
+    print(f"\n🎁 BATTLEPASS MODE: Will claim battlepass rewards on {len(instances)} MEmu instance(s)")
+    print("Starting battlepass claiming bots...")
+    
+    # Create bot instances for claiming battlepass
+    bots = []
+    for device_id, instance_name in instances:
+        bot = EmulatorBot(device_id, instance_name)
+        bots.append(bot)
+    
+    # Start battlepass threads
+    with ThreadPoolExecutor(max_workers=len(bots)) as executor:
+        try:
+            # Submit battlepass claiming tasks
+            futures = [executor.submit(bot.auto_claim_battlepass) for bot in bots]
+            
+            print(f"All {len(bots)} battlepass claiming bots started! Press Ctrl+C to stop.")
+            
+            # Wait for completion or shutdown
+            while not shutdown_requested:
+                time.sleep(1)
+                
+                # Check if all futures completed
+                completed = [f for f in futures if f.done()]
+                if len(completed) == len(futures):
+                    print("All battlepass claiming bots completed their tasks.")
+                    break
+            
+        except KeyboardInterrupt:
+            print("\nKeyboard interrupt received")
+        finally:
+            # Stop all bots
+            print("Stopping all battlepass claiming bots...")
+            for bot in bots:
+                bot.stop()
+            
+            # Wait for threads to finish
+            print("Waiting for battlepass claiming bots to finish...")
+            executor.shutdown(wait=True)
+            
+            print("All battlepass claiming bots stopped. Goodbye!")
 
 
 def run_battle_mode(instances, max_battles=0):
@@ -238,10 +283,16 @@ def main(mode='battle', **kwargs):
     # Check for legacy command line arguments if no mode specified
     if mode == 'battle':
         upgrade_mode = "--upgrade" in sys.argv or "-u" in sys.argv
+        battlepass_mode = "--battlepass" in sys.argv
         if "--help" in sys.argv or "-h" in sys.argv:
             print_help()
             return
-        mode = 'upgrade' if upgrade_mode else 'battle'
+        if battlepass_mode:
+            mode = 'battlepass'
+        elif upgrade_mode:
+            mode = 'upgrade'
+        else:
+            mode = 'battle'
     
     # Verify template images exist
     if not verify_template_images():
@@ -328,6 +379,8 @@ def main(mode='battle', **kwargs):
         # Run in appropriate mode
         if mode == 'upgrade':
             run_upgrade_mode(instances)
+        elif mode == 'battlepass':
+            run_battlepass_mode(instances)
         else:
             run_battle_mode(instances)
 

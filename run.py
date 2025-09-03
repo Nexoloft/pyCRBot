@@ -5,6 +5,8 @@ Usage:
   python run.py --gui                    # Launch GUI
   python run.py --headless              # Run single emulator headless
   python run.py --multi 3               # Run 3 emulators
+  python run.py --upgrade               # Run card upgrade mode
+  python run.py --battlepass            # Run battlepass claiming mode
 """
 
 import sys
@@ -24,6 +26,10 @@ def parse_args():
                            help='Run single emulator in headless mode')
     mode_group.add_argument('--multi', type=int, metavar='N',
                            help='Run N emulators (1-10)')
+    mode_group.add_argument('--upgrade', action='store_true',
+                           help='Run card upgrade mode')
+    mode_group.add_argument('--battlepass', action='store_true',
+                           help='Run battlepass claiming mode')
     mode_group.add_argument('--status', action='store_true',
                            help='Show MEmu emulator status and exit')
     
@@ -64,6 +70,14 @@ def main_entry():
             print(f"🚀 Starting {args.multi} emulator(s)")
             print(f"⚔️  Battle limit per emulator: {'∞' if args.battles == 0 else args.battles}")
             main('multi', num_emulators=args.multi, max_battles=args.battles)
+            
+        elif args.battlepass:
+            print("🎁 Starting battlepass claiming mode...")
+            main('battlepass')
+            
+        elif args.upgrade:
+            print("🔧 Starting card upgrade mode...")
+            main('upgrade')
             
     except KeyboardInterrupt:
         print("\n⏹️  Bot stopped by user")

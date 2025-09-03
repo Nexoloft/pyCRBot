@@ -138,14 +138,14 @@ class EmulatorBot:
     
     def fallback_click_sequence(self):
         """Click at fallback position multiple times as fallback, then check for battle"""
-        self.logger.log("Performing fallback click sequence...")
+        self.logger.log("Performing enhanced fallback click sequence...")
         fallback_position = FALLBACK_POSITIONS.get('battle_start', (96, 1316))
         
-        for i in range(5):  # Reduced from 10 to 5 for faster recovery
+        for i in range(12):  # Increased from 5 to 12 for better popup handling
             if not self.running:
                 return False
             
-            self.logger.log(f"Fallback click {i+1}/5")
+            self.logger.log(f"Fallback click {i+1}/12")
             self.tap_screen(fallback_position[0], fallback_position[1])
             
             # Check if battle started during the click sequence
@@ -153,15 +153,29 @@ class EmulatorBot:
                 self.logger.log(f"✓ Battle detected during fallback click {i+1}!")
                 return True
             
-            if i < 4:  # Don't wait after the last click
-                time.sleep(2)  # Reduced from 3 to 2 seconds
+            if i < 11:  # Don't wait after the last click
+                time.sleep(3)  # Increased from 2 to 3 seconds for longer intervals
                 
                 # Check again after the wait
                 if self.is_in_battle():
                     self.logger.log(f"✓ Battle detected after fallback click {i+1} wait!")
                     return True
         
-        self.logger.log("No battle detected after fallback clicks")
+        # After fallback clicks, wait and check for battle for a longer period
+        self.logger.log("Enhanced fallback clicks completed, checking for battle...")
+        fallback_check_start = time.time()
+        
+        while time.time() - fallback_check_start < 20:  # Extended wait time to 20 seconds
+            if not self.running:
+                return False
+                
+            if self.is_in_battle():
+                self.logger.log("✓ Battle detected after extended fallback wait!")
+                return True
+            
+            time.sleep(1)
+        
+        self.logger.log("No battle detected after enhanced fallback clicks")
         return False
     
     def start_first_battle(self):
@@ -322,3 +336,73 @@ class EmulatorBot:
         
         self.logger.log(f"Auto upgrade sequence finished. Total upgrades: {upgrade_count}")
         return upgrade_count
+
+    def auto_claim_battlepass(self):
+        """Automatically claim battlepass rewards using template matching"""
+        self.logger.change_status("Starting automatic battlepass claiming sequence...")
+        
+        claims_count = 0
+        
+        while self.running:
+            # First click at (114, 271) until ClaimRewards.png is detected
+            self.logger.log("Clicking at (114, 271) to progress battlepass...")
+            click_attempts = 0
+            max_click_attempts = 100  # Prevent infinite clicking
+            found_claim_button = False
+            
+            # Keep clicking until we find a ClaimRewards button
+            while click_attempts < max_click_attempts and self.running and not found_claim_button:
+                self.tap_screen(114, 271)
+                click_attempts += 1
+                time.sleep(0.1)  # Wait between clicks
+                
+                # Check if ClaimRewards.png is detected
+                screenshot = self.take_screenshot()
+                if screenshot is not None:
+                    claim_rewards_pos, confidence = self.find_template("ClaimRewards", screenshot)
+                    if claim_rewards_pos:
+                        claims_count += 1
+                        self.logger.log(f"Claim #{claims_count}: Found ClaimRewards button (confidence: {confidence:.2f}) after {click_attempts} clicks")
+                        
+                        # Click the ClaimRewards button
+                        if self.tap_screen(claim_rewards_pos[0], claim_rewards_pos[1]):
+                            self.logger.log("Successfully clicked ClaimRewards button")
+                            time.sleep(2)  # Wait 2 seconds as requested
+                            found_claim_button = True
+                        else:
+                            self.logger.log("Failed to click ClaimRewards button, continuing...")
+            
+            # If we found and clicked a claim button, look for the next one
+            if found_claim_button:
+                # Keep clicking at (114, 271) until claim button is found again or 15 seconds timeout
+                self.logger.log("Looking for next ClaimRewards button...")
+                start_time = time.time()
+                timeout_duration = 15  # 15 seconds timeout
+                found_next_claim = False
+                
+                while time.time() - start_time < timeout_duration and self.running:
+                    self.tap_screen(114, 271)
+                    time.sleep(0.5)  # Wait between clicks
+                    
+                    # Check if ClaimRewards.png is detected again
+                    screenshot = self.take_screenshot()
+                    if screenshot is not None:
+                        next_claim_pos, next_confidence = self.find_template("ClaimRewards", screenshot)
+                        if next_claim_pos:
+                            self.logger.log(f"Found next ClaimRewards button (confidence: {next_confidence:.2f}) after {time.time() - start_time:.1f} seconds")
+                            found_next_claim = True
+                            break
+                
+                if not found_next_claim:
+                    self.logger.log("No ClaimRewards button found after 15 seconds timeout")
+                    self.logger.log("Ending battlepass claiming sequence")
+                    break
+                # If found_next_claim is True, continue the main loop to claim the next reward
+            else:
+                # No claim button found after max attempts
+                self.logger.log("Reached maximum click attempts at (114, 271) without finding ClaimRewards")
+                self.logger.log("No more battlepass rewards available or unable to progress further")
+                break
+        
+        self.logger.log(f"Auto battlepass claiming sequence finished. Total claims: {claims_count}")
+        return claims_count

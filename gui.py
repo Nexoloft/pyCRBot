@@ -5,7 +5,7 @@ Simple GUI interface for the Clash Royale Bot
 import tkinter as tk
 from tkinter import ttk, messagebox
 import threading
-from main import detect_memu_instances, verify_template_images, run_battle_mode, run_upgrade_mode
+from main import detect_memu_instances, verify_template_images, run_battle_mode, run_upgrade_mode, run_battlepass_mode
 
 
 class ClashRoyaleBotGUI:
@@ -68,6 +68,14 @@ class ClashRoyaleBotGUI:
             value="upgrade"
         )
         upgrade_radio.pack(anchor="w")
+        
+        battlepass_radio = ttk.Radiobutton(
+            mode_frame, 
+            text="Battlepass Mode - Automatically claim battlepass rewards", 
+            variable=self.mode_var, 
+            value="battlepass"
+        )
+        battlepass_radio.pack(anchor="w")
         
         # Control buttons frame
         control_frame = ttk.Frame(self.root)
@@ -151,8 +159,10 @@ class ClashRoyaleBotGUI:
         # Start bot in separate thread
         if mode == "battle":
             self.bot_thread = threading.Thread(target=self._run_battle_mode, daemon=True)
-        else:
+        elif mode == "upgrade":
             self.bot_thread = threading.Thread(target=self._run_upgrade_mode, daemon=True)
+        elif mode == "battlepass":
+            self.bot_thread = threading.Thread(target=self._run_battlepass_mode, daemon=True)
         
         self.bot_thread.start()
     
@@ -185,6 +195,15 @@ class ClashRoyaleBotGUI:
             run_upgrade_mode(self.instances)
         except Exception as e:
             self.log_status(f"❌ Error in upgrade mode: {e}")
+        finally:
+            self.root.after(0, self.stop_bot)  # Update GUI from main thread
+    
+    def _run_battlepass_mode(self):
+        """Run battlepass mode in thread"""
+        try:
+            run_battlepass_mode(self.instances)
+        except Exception as e:
+            self.log_status(f"❌ Error in battlepass mode: {e}")
         finally:
             self.root.after(0, self.stop_bot)  # Update GUI from main thread
     

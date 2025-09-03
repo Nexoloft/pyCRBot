@@ -673,13 +673,13 @@ class EmulatorBot:
             return False
 
     def fallback_click_sequence(self):
-        """Click at (96, 1316) ten times with 3-second intervals as fallback, then check for battle"""
-        print(f"[{self.instance_name}] Performing fallback click sequence at (96, 1316)...")
-        for i in range(10):
+        """Click at (96, 1316) fifteen times with 4-second intervals as fallback, then check for battle"""
+        print(f"[{self.instance_name}] Performing enhanced fallback click sequence at (96, 1316)...")
+        for i in range(15):
             if shutdown_requested or not self.running:
                 return False
             
-            print(f"[{self.instance_name}] Fallback click {i+1}/10")
+            print(f"[{self.instance_name}] Fallback click {i+1}/15")
             self.tap_screen(96, 1316)
             
             # Check if battle started during the click sequence
@@ -687,8 +687,8 @@ class EmulatorBot:
                 print(f"[{self.instance_name}] ✓ Battle detected during fallback click {i+1}!")
                 return True
             
-            if i < 9:  # Don't wait after the last click
-                time.sleep(3)
+            if i < 14:  # Don't wait after the last click
+                time.sleep(4)
                 
                 # Check again after the wait
                 if self.is_in_battle():
@@ -699,7 +699,7 @@ class EmulatorBot:
         print(f"[{self.instance_name}] Fallback clicks completed, checking for battle...")
         fallback_check_start = time.time()
         
-        while time.time() - fallback_check_start < 10:  # Check for 10 seconds after fallback
+        while time.time() - fallback_check_start < 15:  # Check for 15 seconds after fallback
             if shutdown_requested or not self.running:
                 return False
                 
@@ -709,7 +709,7 @@ class EmulatorBot:
             
             time.sleep(1)
         
-        print(f"[{self.instance_name}] No battle detected after fallback clicks")
+        print(f"[{self.instance_name}] No battle detected after enhanced fallback clicks")
         return False
 
     def auto_upgrade_cards(self):
