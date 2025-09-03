@@ -1,0 +1,32 @@
+__pycache__/
+*.pyc
+*.pyo
+*.log
+*.tmp
+*.swp
+
+# VSCode / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Virtual envs
+venv/
+.venv/
+env/
+
+# Local runtime artifacts
+screenshots_MEmu_*/
+logs/
+
+# Cache
+.pytest_cache/
+dist/
+build/
+
+# Python packaging
+*.egg-info/

@@ -41,19 +41,7 @@ CONFIDENCE_THRESHOLD = 0.8
 # Timeout for inactivity (30 seconds)
 INACTIVITY_TIMEOUT = 30
 
-# Timing delays
-CARD_SELECTION_DELAY = 0.15
-CARD_COMBO_DELAY = 0.4
-SCREENSHOT_DELAY = 0.05
-ELIXIR_CHECK_INTERVAL = 2
-DOUBLE_ELIXIR_CHECK_INTERVAL = 3
-
-# Fallback positions for different situations
-FALLBACK_POSITIONS = {
-    "battle_start": (96, 1316),
-    "deadspace": (20, 200),
-    "battle_button": (540, 1200)
-}
+# (Timing delays defined once at bottom to avoid duplicates)
 
 # Elixir detection coordinates
 ELIXIR_COORDS = [
@@ -127,21 +115,22 @@ POST_BATTLE_PIXELS = {
     ]
 }
 
-# Fallback positions
+# Unified fallback positions (merged duplicates, includes battle_start)
 FALLBACK_POSITIONS = {
     "ok_button": (540, 1100),
     "battle_button": (540, 1200),
     "post_battle_button": (200, 550),
     "deadspace": (20, 200),
     "fallback_click": (96, 1316),
-    "card_scroll": (20, 254)
+    "card_scroll": (20, 254),
+    "battle_start": (96, 1316),  # Alias used by older code
 }
 
 # Color tolerance for pixel matching
 COLOR_TOLERANCE = 25
 ELIXIR_COLOR_TOLERANCE = 35
 
-# Timing constants
+# Timing constants (single source of truth)
 CARD_SELECTION_DELAY = 0.15
 CARD_COMBO_DELAY = 0.4
 BATTLE_CHECK_INTERVAL = 0.5

@@ -4,6 +4,36 @@
 
 _Refactored with PyClashBot architecture patterns for enhanced performance and reliability._
 
+## 🎁 Battlepass Claiming Mode (Auto Rewards)
+
+The bot can automatically claim Battle Pass rewards using fast template matching.
+
+Quick start:
+```cmd
+python run.py --battlepass
+```
+Or via legacy entry:
+```cmd
+python main.py --battlepass
+```
+GUI: launch with `python run.py --gui`, pick "Battlepass Mode - Automatically claim battlepass rewards", then Start.
+
+How it works:
+1. Repeatedly clicks at (114, 271) to advance the pass track
+2. Detects `ClaimRewards.png` template
+3. On detection: clicks button, waits 2s, resumes searching
+4. Stops when no new rewards show within timeout
+
+Defaults:
+- Max initial search clicks: 100
+- Wait between progression clicks: 0.1s (0.5s while waiting for next reward)
+- Next reward timeout: 15s
+- Template: `templates/ClaimRewards.png` (ensure present)
+
+Logging shows each claim count and confidence. Sequence ends cleanly when finished.
+
+Legacy cleanup: Deprecated duplicate files (battle_runner_new.py, emulator_bot_new.py) and standalone test scripts have been removed to reduce noise. Use the canonical modules and pytest `tests/` for validation.
+
 ## ✨ Key Features
 
 ### 🏗️ **Modern Architecture**
@@ -55,6 +85,7 @@ Ensure all template images are present in the `templates/` folder:
 - `Battle.png`, `OK.png`, `PlayAgain.png`, `InBattle.png`
 - `upgrade_possible.png`, `upgrade_button.png`, `Confirm.png`
 - `2xElixir.png`
+- `ClaimRewards.png` (for battlepass mode)
 
 ## 🎯 Usage
 
@@ -74,6 +105,9 @@ python run.py
 
 # Upgrade mode  
 python run.py --upgrade
+
+# Battlepass mode
+python run.py --battlepass
 
 # Show help
 python run.py --help
