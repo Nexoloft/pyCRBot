@@ -268,21 +268,30 @@ class BattleRunner:
                 self.bot.tap_screen(ok_pos[0], ok_pos[1])
                 time.sleep(3)  # Wait longer for transition to home screen
                 
-                # Look for battle button with retries
-                for attempt in range(5):  # Try up to 5 times to find battle button
+                # Enhanced battle button search with continuous clicking
+                self.logger.log("Searching for battle button after returning to home screen...")
+                battle_search_start = time.time()
+                battle_search_timeout = 30  # Search for up to 30 seconds
+                
+                while time.time() - battle_search_start < battle_search_timeout:
+                    if not self.bot.running or self.shutdown_check():
+                        return False
+                    
                     screenshot = self.bot.take_screenshot()
                     if screenshot is not None:
                         battle_pos, battle_confidence = self.bot.find_template("battle_button", screenshot)
                         if battle_pos:
-                            self.logger.log(f"Clicking Battle button for next match (attempt {attempt + 1})...")
+                            self.logger.log(f"Found Battle button (confidence: {battle_confidence:.2f}), clicking for next match...")
                             self.bot.tap_screen(battle_pos[0], battle_pos[1])
                             return True
                     
-                    if attempt < 4:  # Don't wait after last attempt
-                        time.sleep(1)  # Wait 1 second between attempts
+                    # If battle button not found, click the screen and wait 1 second before trying again
+                    self.logger.log("Battle button not found, clicking screen to refresh...")
+                    self.bot.tap_screen(540, 960)  # Click center of screen to refresh
+                    time.sleep(1)  # Wait 1 second between clicks as requested
                 
-                # If battle button not found, try fallback position
-                self.logger.log("Battle button not found, trying fallback position...")
+                # If still no battle button found after timeout, try fallback position
+                self.logger.log("Battle button search timed out, trying fallback position...")
                 self.bot.tap_screen(540, 1200)  # Fallback battle button position
                 return True
             

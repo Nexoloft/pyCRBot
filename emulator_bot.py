@@ -180,10 +180,10 @@ class EmulatorBot:
         return False
     
     def start_first_battle(self):
-        """Click battle button to start the first battle from home page"""
+        """Click battle button to start the first battle from home page with continuous clicking until found"""
         self.logger.change_status("Looking for Battle button to start first battle...")
         
-        # Look for battle button for up to 30 seconds
+        # Look for battle button for up to 30 seconds with continuous clicking
         start_time = time.time()
         while time.time() - start_time < 30:
             if not self.running:
@@ -199,10 +199,12 @@ class EmulatorBot:
                 self.tap_screen(battle_position[0], battle_position[1])
                 return True
             
-            self.logger.change_status("Battle button not found, waiting...")
-            time.sleep(1)
+            # If battle button not found, click the screen and wait 1 second before trying again
+            self.logger.change_status("Battle button not found, clicking screen to refresh...")
+            self.tap_screen(540, 960)  # Click center of screen to refresh
+            time.sleep(1)  # Wait 1 second between clicks as requested
         
-        self.logger.log("Timeout: Could not find Battle button on home page")
+        self.logger.log("Timeout: Could not find Battle button on home page after continuous clicking")
         return False
     
     def play_card_strategically(self):
