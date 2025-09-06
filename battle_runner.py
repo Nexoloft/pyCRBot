@@ -62,7 +62,7 @@ class BattleRunner:
                         self.logger.log(f"Recovery attempt {recovery_attempts}/{max_recovery_attempts}")
                         
                         # Try clicking battle button as fallback
-                        self.bot.tap_screen(209, 600)  # Battle button position (center X, near bottom)
+                        self.bot.tap_screen(34, 311)  # Battle button fallback position
                         time.sleep(2)
                         
                         # Check if battle started after recovery click
@@ -73,9 +73,9 @@ class BattleRunner:
                         # Try different recovery positions
                         if recovery_attempts == 2:
                             self.logger.log("Trying additional recovery clicks...")
-                            self.bot.tap_screen(209, 580)  # Alternative button position (center X, bottom area)
+                            self.bot.tap_screen(34, 311)  # Alternative fallback position
                             time.sleep(1)
-                            self.bot.tap_screen(209, 600)  # Another alternative (center X, near bottom)
+                            self.bot.tap_screen(34, 311)  # Another alternative fallback position
                             time.sleep(2)
                     else:
                         # If recovery failed, check timeout
@@ -130,9 +130,9 @@ class BattleRunner:
                         self.logger.log("Issues with post-battle sequence, retrying...")
                         if battle_end_attempts < max_battle_end_attempts:
                             # Try some recovery clicks before next attempt
-                            self.bot.tap_screen(209, 580)  # OK button fallback (center of screen, bottom area)
+                            self.bot.tap_screen(34, 311)  # OK button fallback
                             time.sleep(1)
-                            self.bot.tap_screen(209, 600)  # Battle button fallback (center of screen, near bottom)
+                            self.bot.tap_screen(34, 311)  # Battle button fallback
                             time.sleep(2)
                         else:
                             self.logger.log("Failed to handle battle end after all attempts, restarting app...")
@@ -287,12 +287,12 @@ class BattleRunner:
                     
                     # If battle button not found, click the screen and wait 1 second before trying again
                     self.logger.log("Battle button not found, clicking screen to refresh...")
-                    self.bot.tap_screen(209, 316)  # Click center of screen to refresh
+                    self.bot.tap_screen(34, 311)  # Click screen to refresh
                     time.sleep(1)  # Wait 1 second between clicks as requested
                 
                 # If still no battle button found after timeout, try fallback position
                 self.logger.log("Battle button search timed out, trying fallback position...")
-                self.bot.tap_screen(209, 600)  # Fallback battle button position (center of screen, near bottom)
+                self.bot.tap_screen(34, 311)  # Fallback battle button position
                 return True
             
             # Click deadspace to close any popups
