@@ -20,13 +20,13 @@ class EmulatorBot:
     Refactored Bot instance for a single emulator using PyClashBot architecture
     """
     
-    def __init__(self, device_id, instance_name):
+    def __init__(self, device_id, instance_name, use_console_display=True):
         self.device_id = device_id
         self.instance_name = instance_name
         self.running = True
         
         # Initialize logger first
-        self.logger = Logger(instance_name, timed=True)
+        self.logger = Logger(instance_name, timed=True, use_console_display=use_console_display)
         
         # Initialize emulator controller
         self.emulator = MemuController(device_id, instance_name)
@@ -129,7 +129,8 @@ class EmulatorBot:
             # Secondary check: Click deadspace to handle potential UI blocks (only if fallback is enabled)
             if use_fallback and elapsed >= 5:  # After 5 seconds, start clicking deadspace
                 if random.randint(0, 2) == 0:  # 33% chance each cycle
-                    self.tap_screen(20, 200)  # Deadspace click to handle UI
+                    deadspace_position = FALLBACK_POSITIONS.get('deadspace', (21, 511))
+                    self.tap_screen(deadspace_position[0], deadspace_position[1])  # Deadspace click to handle UI
             
             self.logger.change_status(f"Battle not detected yet, waiting... ({elapsed:.1f}s)")
             time.sleep(1)
@@ -201,7 +202,8 @@ class EmulatorBot:
             
             # If battle button not found, click the screen and wait 1 second before trying again
             self.logger.change_status("Battle button not found, clicking screen to refresh...")
-            self.tap_screen(34, 311)  # Click screen to refresh
+            fallback_position = FALLBACK_POSITIONS.get('fallback_click', (21, 511))
+            self.tap_screen(fallback_position[0], fallback_position[1])  # Click screen to refresh
             time.sleep(1)  # Wait 1 second between clicks as requested
         
         self.logger.log("Timeout: Could not find Battle button on home page after continuous clicking")
@@ -316,12 +318,13 @@ class EmulatorBot:
                     self.tap_screen(confirm_pos[0], confirm_pos[1])
                     time.sleep(1)
                 
-                # Click at (20, 254) until upgrade_possible.png is detected again
+                # Click at card scroll position until upgrade_possible.png is detected again
                 click_attempts = 0
                 max_click_attempts = 20  # Reduced from 30
+                card_scroll_position = FALLBACK_POSITIONS.get('card_scroll', (21, 511))
                 
                 while click_attempts < max_click_attempts and self.running:
-                    self.tap_screen(20, 254)
+                    self.tap_screen(card_scroll_position[0], card_scroll_position[1])
                     click_attempts += 1
                     time.sleep(0.5)  # Faster clicking
                     

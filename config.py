@@ -118,13 +118,13 @@ POST_BATTLE_PIXELS = {
 # Unified fallback positions (merged duplicates, includes battle_start)
 # Screen resolution: 419 x 633 - all coordinates must be within these bounds
 FALLBACK_POSITIONS = {
-    "ok_button": (34, 311),      # Fallback click position
-    "battle_button": (34, 311),  # Fallback click position
-    "post_battle_button": (34, 311),
-    "deadspace": (20, 200),
-    "fallback_click": (34, 311), # Fallback click position
-    "card_scroll": (20, 254),
-    "battle_start": (34, 311),   # Alias used by older code
+    "ok_button": (21, 511),      # Fallback click position
+    "battle_button": (21, 511),  # Fallback click position
+    "post_battle_button": (21, 511),
+    "deadspace": (21, 511),
+    "fallback_click": (21, 511), # Fallback click position
+    "card_scroll": (21, 511),
+    "battle_start": (21, 511),   # Alias used by older code
 }
 
 # Color tolerance for pixel matching

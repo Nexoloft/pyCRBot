@@ -13,6 +13,7 @@ from emulator_bot import EmulatorBot
 from battle_runner import BattleRunner
 from emulator_utils import detect_memu_instances
 from config import REF_IMAGES
+from console_display import console_display
 
 
 # Global variable to handle graceful shutdown
@@ -22,6 +23,11 @@ shutdown_requested = False
 def signal_handler(signum, frame):
     """Handle Ctrl+C gracefully"""
     global shutdown_requested
+    try:
+        # Stop console display first to prevent interference
+        console_display.stop_display()
+    except Exception:
+        pass  # Ignore errors if console_display isn't initialized
     print("\nShutdown signal received. Stopping all bots...")
     shutdown_requested = True
 
@@ -49,6 +55,7 @@ def print_help():
     print("  python main.py --upgrade    # Run card upgrade bot")
     print("  python main.py -u           # Run card upgrade bot (short)")
     print("  python main.py --battlepass # Run battlepass claiming bot")
+    print("  python main.py --no-gui     # Disable GUI-like console display")
     print("  python main.py --help       # Show this help")
 
 
@@ -140,11 +147,15 @@ def run_battlepass_mode(instances):
             print("All battlepass claiming bots stopped. Goodbye!")
 
 
-def run_battle_mode(instances, max_battles=0):
+def run_battle_mode(instances, max_battles=0, no_gui=False):
     """Run the bot in battle mode"""
     print(f"\n⚔️ BATTLE MODE: Found {len(instances)} MEmu instance(s). Starting battle bots...")
     if max_battles > 0:
         print(f"🎯 Battle limit: {max_battles} per emulator")
+    
+    # Start console display only if GUI mode is enabled
+    if not no_gui:
+        console_display.start_display()
     
     # Create bot instances
     bots = []
@@ -162,11 +173,11 @@ def run_battle_mode(instances, max_battles=0):
                 port = instance.get('port', 21503)
                 device_id = f"127.0.0.1:{port}"
                 instance_name = f"MEmu_{i + 1}"
-            bot = EmulatorBot(device_id, instance_name)
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
         else:
             # Legacy format (device_id, instance_name)
             device_id, instance_name = instance
-            bot = EmulatorBot(device_id, instance_name)
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
         
         runner = BattleRunner(bot, lambda: shutdown_requested, max_battles=max_battles)
         bots.append(bot)
@@ -178,8 +189,6 @@ def run_battle_mode(instances, max_battles=0):
             # Submit bot tasks
             futures = [executor.submit(runner.run_bot_loop) for runner in battle_runners]
             
-            print(f"All {len(bots)} bots started! Press Ctrl+C to stop.")
-            
             # Wait for completion or shutdown
             while not shutdown_requested:
                 time.sleep(1)
@@ -188,29 +197,32 @@ def run_battle_mode(instances, max_battles=0):
                 completed = [f for f in futures if f.done()]
                 if completed:
                     remaining = len(futures) - len(completed)
-                    print(f"{len(completed)} bot(s) finished unexpectedly, {remaining} still running")
                     
                     # Only stop all bots if ALL bots have finished unexpectedly
                     if remaining == 0:
-                        print("All bots finished unexpectedly, stopping...")
                         break
                     
-                    # For partial failures, just report but continue with remaining bots
-                    print("Continuing with remaining bots...")
+                    # For partial failures, just continue with remaining bots
             
         except KeyboardInterrupt:
-            print("\nKeyboard interrupt received")
+            pass
         finally:
+            # Stop console display
+            if not no_gui:
+                console_display.stop_display()
+            
             # Stop all bots
-            print("Stopping all bots...")
             for bot in bots:
                 bot.stop()
             
             # Wait for threads to finish
-            print("Waiting for bots to finish...")
             executor.shutdown(wait=True)
             
-            print("All bots stopped. Goodbye!")
+            # Show final summary
+            if not no_gui:
+                console_display.print_final_summary()
+            else:
+                print("All bots stopped. Goodbye!")
 
 
 def main(mode='battle', **kwargs):
@@ -281,9 +293,11 @@ def main(mode='battle', **kwargs):
     print("=" * 40)
     
     # Check for legacy command line arguments if no mode specified
+    no_gui_mode = False  # Default value
     if mode == 'battle':
         upgrade_mode = "--upgrade" in sys.argv or "-u" in sys.argv
         battlepass_mode = "--battlepass" in sys.argv
+        no_gui_mode = "--no-gui" in sys.argv
         if "--help" in sys.argv or "-h" in sys.argv:
             print_help()
             return
@@ -293,6 +307,8 @@ def main(mode='battle', **kwargs):
             mode = 'upgrade'
         else:
             mode = 'battle'
+    else:
+        no_gui_mode = kwargs.get('no_gui', False)
     
     # Verify template images exist
     if not verify_template_images():
@@ -367,7 +383,7 @@ def main(mode='battle', **kwargs):
             print(f"❌ Error getting device list: {e}")
             return
         
-        run_battle_mode(valid_instances, max_battles=max_battles)
+        run_battle_mode(valid_instances, max_battles=max_battles, no_gui=no_gui_mode)
         
     else:
         # Detect available MEmu instances for battle/upgrade modes
@@ -382,7 +398,7 @@ def main(mode='battle', **kwargs):
         elif mode == 'battlepass':
             run_battlepass_mode(instances)
         else:
-            run_battle_mode(instances)
+            run_battle_mode(instances, no_gui=no_gui_mode)
 
 
 if __name__ == "__main__":
