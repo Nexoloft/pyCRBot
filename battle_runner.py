@@ -228,17 +228,9 @@ class BattleRunner:
             # Determine if we should play a card
             should_play = False
             
-            if is_2x_elixir:
-                # In 2x elixir, play more aggressively
-                if current_elixir is None or current_elixir >= 3:
-                    should_play = True
-            else:
-                # Use strategic elixir waiting
-                target_elixir = self.bot.battle_strategy.select_elixir_amount()
-                if current_elixir is not None and current_elixir >= target_elixir:
-                    should_play = True
-                elif self.bot.battle_strategy.should_play_aggressively():
-                    should_play = True
+            # Only play if we have at least 7 elixir
+            if current_elixir is not None and current_elixir >= 7:
+                should_play = True
             
             if should_play:
                 if self.bot.play_card_strategically():
