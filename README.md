@@ -32,6 +32,45 @@ Defaults:
 
 Logging shows each claim count and confidence. Sequence ends cleanly when finished.
 
+## ⚔️ Clan War Mode (Auto War Battles)
+
+The bot can automatically play clan war battles with full battle AI integration.
+
+Quick start:
+```cmd
+python run.py --war
+```
+Or via legacy entry:
+```cmd
+python main.py --war
+```
+
+**Prerequisites**: You must be on the clan war screen before starting the bot.
+
+How it works:
+1. **Search for battles**: Looks for Sudden Death (priority) or Normal Battle buttons
+2. **Click war type**: Clicks the found war battle button
+3. **Find Battle button**: Searches for the Battle button (120s timeout)
+4. **Play battle**: Uses normal battle AI to play cards strategically
+5. **Post-battle**: Clicks OK button to return to war screen
+6. **Loop**: Repeats from step 1 until stopped or all battles complete
+
+Features:
+- ✅ Prioritizes Sudden Death battles over Normal Battles
+- ✅ 120-second Battle button search timeout (stops if not found)
+- ✅ Full battle AI with elixir management and strategic card play
+- ✅ Automatic post-battle cleanup
+- ✅ Multi-emulator support
+- ✅ Battle limit support (`--battles N`)
+
+Required templates:
+- `templates/NormalBattle.png` - Normal war battle button
+- `templates/SuddenDeath.png` - Sudden death battle button  
+- `templates/WarBattle.png` - War-specific Battle start button
+- `templates/OK.png` - Post-battle OK button
+
+For detailed documentation, see [WAR_MODE.md](WAR_MODE.md).
+
 Legacy cleanup: Deprecated duplicate files (battle_runner_new.py, emulator_bot_new.py) and standalone test scripts have been removed to reduce noise. Use the canonical modules and pytest `tests/` for validation.
 
 ## ✨ Key Features
@@ -86,6 +125,7 @@ Ensure all template images are present in the `templates/` folder:
 - `upgrade_possible.png`, `upgrade_button.png`, `Confirm.png`
 - `2xElixir.png`
 - `ClaimRewards.png` (for battlepass mode)
+- `NormalBattle.png`, `SuddenDeath.png`, `WarBattle.png` (for war mode)
 
 ## 🎯 Usage
 
@@ -101,13 +141,22 @@ python run.py --gui
 ### CLI Mode
 ```bash
 # Battle mode
-python run.py
+python run.py --headless
+
+# Multiple emulators (battle mode)
+python run.py --multi 3
 
 # Upgrade mode  
 python run.py --upgrade
 
 # Battlepass mode
 python run.py --battlepass
+
+# Clan war mode
+python run.py --war
+
+# Battle limit (for any battle mode)
+python run.py --war --battles 10
 
 # Show help
 python run.py --help
@@ -123,13 +172,15 @@ pyCRBot/
 ├── battle_strategy.py  # Strategic battle AI
 ├── battle_logic.py     # Game mechanics detection
 ├── battle_runner.py    # Main battle loop coordination
+├── war_runner.py       # Clan war battle loop
 ├── detection.py        # Image recognition utilities
 ├── emulator_bot.py     # Main bot class
 ├── logger.py           # Statistics and logging
 ├── config.py           # Configuration constants
 ├── gui.py              # GUI interface
 ├── main.py             # CLI interface
-└── run.py              # Enhanced entry point
+├── run.py              # Enhanced entry point
+└── WAR_MODE.md         # War mode documentation
 ```
 
 ### Key Components

@@ -26,13 +26,16 @@ PLAY_AREA = {
 REF_IMAGES = {
     "ok_button": "templates/OK.png",
     "battle_button": "templates/Battle.png",
+    "war_battle_button": "templates/WarBattle.png",
     "in_battle": "templates/InBattle.png",
     "play_again": "templates/PlayAgain.png",
     "upgrade_possible": "templates/upgrade_possible.png",
     "upgrade_button": "templates/upgrade_button.png",
     "confirm": "templates/Confirm.png",
     "2xElixir": "templates/2xElixir.png",
-    "ClaimRewards": "templates/ClaimRewards.png"
+    "ClaimRewards": "templates/ClaimRewards.png",
+    "normal_battle": "templates/NormalBattle.png",
+    "sudden_death": "templates/SuddenDeath.png"
 }
 
 # Confidence threshold for image matching

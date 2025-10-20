@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from emulator_bot import EmulatorBot
 from battle_runner import BattleRunner
+from war_runner import WarRunner
 from emulator_utils import detect_memu_instances
 from config import REF_IMAGES
 from console_display import console_display
@@ -55,6 +56,7 @@ def print_help():
     print("  python main.py --upgrade    # Run card upgrade bot")
     print("  python main.py -u           # Run card upgrade bot (short)")
     print("  python main.py --battlepass # Run battlepass claiming bot")
+    print("  python main.py --war        # Run clan war bot")
     print("  python main.py --no-gui     # Disable GUI-like console display")
     print("  python main.py --help       # Show this help")
 
@@ -145,6 +147,81 @@ def run_battlepass_mode(instances):
             executor.shutdown(wait=True)
             
             print("All battlepass claiming bots stopped. Goodbye!")
+
+
+def run_war_mode(instances, max_battles=0, no_gui=False):
+    """Run the bot in clan war mode"""
+    print(f"\n⚔️ WAR MODE: Will play clan wars on {len(instances)} MEmu instance(s)")
+    if max_battles > 0:
+        print(f"🎯 Battle limit: {max_battles} per emulator")
+    
+    # Start console display only if GUI mode is enabled
+    if not no_gui:
+        console_display.start_display()
+    
+    # Create bot instances
+    bots = []
+    war_runners = []
+    for i, instance in enumerate(instances):
+        # Handle both old and new instance formats
+        if isinstance(instance, dict):
+            if 'device_id' in instance and 'instance_name' in instance:
+                device_id = instance['device_id']
+                instance_name = instance['instance_name']
+            else:
+                device_id = instance.get('index', i)
+                port = instance.get('port', 21503)
+                device_id = f"127.0.0.1:{port}"
+                instance_name = f"MEmu_{i + 1}"
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
+        else:
+            device_id, instance_name = instance
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
+        
+        runner = WarRunner(bot, lambda: shutdown_requested, max_battles=max_battles)
+        bots.append(bot)
+        war_runners.append(runner)
+    
+    # Start war bot threads
+    with ThreadPoolExecutor(max_workers=len(war_runners)) as executor:
+        try:
+            # Submit war tasks
+            futures = [executor.submit(runner.run_war_loop) for runner in war_runners]
+            
+            print(f"All {len(war_runners)} war bots started! Press Ctrl+C to stop.")
+            
+            # Wait for completion or shutdown
+            while not shutdown_requested:
+                time.sleep(1)
+                
+                # Check if any futures completed
+                completed = [f for f in futures if f.done()]
+                if completed:
+                    remaining = len(futures) - len(completed)
+                    
+                    # Only stop all bots if ALL bots have finished
+                    if remaining == 0:
+                        break
+            
+        except KeyboardInterrupt:
+            pass
+        finally:
+            # Stop console display
+            if not no_gui:
+                console_display.stop_display()
+            
+            # Stop all bots
+            for bot in bots:
+                bot.stop()
+            
+            # Wait for threads to finish
+            executor.shutdown(wait=True)
+            
+            # Show final summary
+            if not no_gui:
+                console_display.print_final_summary()
+            else:
+                print("All war bots stopped. Goodbye!")
 
 
 def run_battle_mode(instances, max_battles=0, no_gui=False):
@@ -297,11 +374,14 @@ def main(mode='battle', **kwargs):
     if mode == 'battle':
         upgrade_mode = "--upgrade" in sys.argv or "-u" in sys.argv
         battlepass_mode = "--battlepass" in sys.argv
+        war_mode = "--war" in sys.argv
         no_gui_mode = "--no-gui" in sys.argv
         if "--help" in sys.argv or "-h" in sys.argv:
             print_help()
             return
-        if battlepass_mode:
+        if war_mode:
+            mode = 'war'
+        elif battlepass_mode:
             mode = 'battlepass'
         elif upgrade_mode:
             mode = 'upgrade'
@@ -397,6 +477,8 @@ def main(mode='battle', **kwargs):
             run_upgrade_mode(instances)
         elif mode == 'battlepass':
             run_battlepass_mode(instances)
+        elif mode == 'war':
+            run_war_mode(instances, no_gui=no_gui_mode)
         else:
             run_battle_mode(instances, no_gui=no_gui_mode)
 

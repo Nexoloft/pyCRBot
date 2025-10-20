@@ -7,6 +7,7 @@ Usage:
   python run.py --multi 3               # Run 3 emulators
   python run.py --upgrade               # Run card upgrade mode
   python run.py --battlepass            # Run battlepass claiming mode
+  python run.py --war                   # Run clan war mode
 """
 
 import sys
@@ -30,6 +31,8 @@ def parse_args():
                            help='Run card upgrade mode')
     mode_group.add_argument('--battlepass', action='store_true',
                            help='Run battlepass claiming mode')
+    mode_group.add_argument('--war', action='store_true',
+                           help='Run clan war mode')
     mode_group.add_argument('--status', action='store_true',
                            help='Show MEmu emulator status and exit')
     
@@ -74,6 +77,10 @@ def main_entry():
         elif args.battlepass:
             print("🎁 Starting battlepass claiming mode...")
             main('battlepass')
+            
+        elif args.war:
+            print("⚔️ Starting clan war mode...")
+            main('war')
             
         elif args.upgrade:
             print("🔧 Starting card upgrade mode...")

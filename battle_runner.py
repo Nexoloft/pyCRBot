@@ -228,8 +228,8 @@ class BattleRunner:
             # Determine if we should play a card
             should_play = False
             
-            # Only play if we have at least 7 elixir
-            if current_elixir is not None and current_elixir >= 7:
+            # Only play if we have at least 6 elixir
+            if current_elixir is not None and current_elixir >= 6:
                 should_play = True
             
             if should_play:
