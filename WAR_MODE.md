@@ -18,7 +18,9 @@ Search timeout: **30 seconds**
 
 ### Phase 2: Click Battle Button
 After selecting a war battle type, the bot searches for the Battle button:
-- Template: `templates/WarBattle.png` (war-specific Battle button)
+- **Primary search:** `templates/WarBattle.png` (war-specific Battle button)
+- **Fallback search:** Also checks for `SuddenDeath.png` and `NormalBattle.png` in case of screen changes
+- If war selection screen reappears, automatically reselects the war battle
 - Continuously searches and clicks when found
 - Timeout: **120 seconds** (2 minutes)
 - If not found after timeout, the script stops

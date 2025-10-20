@@ -116,6 +116,7 @@ class WarRunner:
             return False
         
         # Phase 2: Now search for the Battle button and click it
+        # Also continue checking for war battle buttons in case we need to reselect
         self.logger.change_status("War battle selected, searching for War Battle button...")
         battle_button_found = False
         battle_start_time = time.time()
@@ -133,7 +134,7 @@ class WarRunner:
                 time.sleep(1)
                 continue
             
-            # Look for War Battle button (specific to war mode)
+            # First priority: Look for War Battle button (specific to war mode)
             battle_pos, battle_confidence = self.bot.find_template("war_battle_button", screenshot)
             if battle_pos and battle_confidence > 0.7:
                 self.logger.log(f"Found War Battle button (confidence: {battle_confidence:.2f}), clicking to start war battle...")
@@ -141,6 +142,22 @@ class WarRunner:
                 battle_button_found = True
                 time.sleep(2)  # Wait for battle to start
                 break
+            
+            # Second priority: Check if we're back at war selection screen (Sudden Death)
+            sudden_death_pos, sd_confidence = self.bot.find_template("sudden_death", screenshot)
+            if sudden_death_pos and sd_confidence > 0.7:
+                self.logger.log(f"Returned to war selection - Found Sudden Death (confidence: {sd_confidence:.2f}), clicking again...")
+                self.bot.tap_screen(sudden_death_pos[0], sudden_death_pos[1])
+                time.sleep(2)  # Wait for screen transition
+                continue  # Continue searching for War Battle button
+            
+            # Third priority: Check if we're back at war selection screen (Normal Battle)
+            normal_battle_pos, nb_confidence = self.bot.find_template("normal_battle", screenshot)
+            if normal_battle_pos and nb_confidence > 0.7:
+                self.logger.log(f"Returned to war selection - Found Normal Battle (confidence: {nb_confidence:.2f}), clicking again...")
+                self.bot.tap_screen(normal_battle_pos[0], normal_battle_pos[1])
+                time.sleep(2)  # Wait for screen transition
+                continue  # Continue searching for War Battle button
             
             time.sleep(1)  # Wait before next check
         

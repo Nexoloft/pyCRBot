@@ -40,6 +40,8 @@ python main.py --war --no-gui
 2. Click the war battle type found
 
 3. Search for War Battle button (120s timeout)
+   ├─ Also checks for Sudden Death / Normal Battle
+   ├─ Auto-reselects if returned to war selection
    └─ If not found after 120s → STOP
 
 4. Wait for battle to start (60s queue timeout)
