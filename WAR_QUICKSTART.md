@@ -42,14 +42,17 @@ python main.py --war --no-gui
 3. Search for War Battle button (120s timeout)
    └─ If not found after 120s → STOP
 
-4. Play the battle
+4. Wait for battle to start (60s queue timeout)
+   └─ Allows for longer matchmaking in war battles
+
+5. Play the battle
    ├─ Use normal battle AI
    ├─ Strategic card placement
    └─ Elixir management
 
-5. Click OK button after battle
+6. Click OK button after battle
 
-6. Loop back to step 1
+7. Loop back to step 1
 ```
 
 ## Important Notes
@@ -76,6 +79,7 @@ python main.py --war --no-gui
 |-------|---------|-------------------|
 | Find war battle | 30s | Stop bot |
 | Find Battle button | 120s | Stop bot |
+| Battle start (queue) | 60s | Skip battle, loop back |
 | Battle duration | 5 min | End battle |
 | Find OK button | 60s | Log warning and continue |
 

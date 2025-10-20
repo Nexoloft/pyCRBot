@@ -101,12 +101,11 @@ class EmulatorBot:
                 return None, None
         return self.detector.find_template(template_name, screenshot, confidence)
     
-    def wait_for_battle_start(self, use_fallback=True):
+    def wait_for_battle_start(self, use_fallback=True, timeout=45):
         """Wait for battle to start with improved detection and fallback mechanisms"""
         self.logger.change_status("Waiting for battle to start...")
         start_time = time.time()
         fallback_triggered = False
-        timeout = 45  # Increased timeout from 30 to 45 seconds
         
         while time.time() - start_time < timeout:
             if not self.running:

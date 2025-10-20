@@ -39,9 +39,10 @@ class WarRunner:
                     self.logger.log("No war battles available or failed to start. Stopping...")
                     break
                 
-                # Wait for battle to start
-                if not self.bot.wait_for_battle_start(use_fallback=True):
-                    self.logger.log("Battle didn't start properly after clicking war battle")
+                # Wait for battle to start (60 seconds for war battles due to longer queue times)
+                self.logger.change_status("Waiting for war battle to start (queue time may be longer)...")
+                if not self.bot.wait_for_battle_start(use_fallback=True, timeout=60):
+                    self.logger.log("War battle didn't start after 60 seconds (queue timeout)")
                     continue
                 
                 # Play the battle using normal battle logic

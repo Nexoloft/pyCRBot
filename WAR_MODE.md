@@ -25,6 +25,7 @@ After selecting a war battle type, the bot searches for the Battle button:
 
 ### Phase 3: Play Battle
 The bot uses the normal battle logic to play cards:
+- Waits up to 60 seconds for battle to start (longer queue times for war battles)
 - Detects elixir amount
 - Plays cards strategically when elixir >= 6
 - Monitors battle status
