@@ -35,7 +35,9 @@ REF_IMAGES = {
     "2xElixir": "templates/2xElixir.png",
     "ClaimRewards": "templates/ClaimRewards.png",
     "normal_battle": "templates/NormalBattle.png",
-    "sudden_death": "templates/SuddenDeath.png"
+    "sudden_death": "templates/SuddenDeath.png",
+    "rampup": "templates/RampUp.png",
+    "touchdown_war": "templates/TouchdownWar.png"
 }
 
 # Confidence threshold for image matching

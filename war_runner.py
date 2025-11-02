@@ -21,8 +21,8 @@ class WarRunner:
         self.logger = bot.logger
     
     def run_war_loop(self):
-        """Main war loop - searches for available war battles and plays them"""
-        self.logger.change_status("Starting clan war bot loop...")
+        """Main war loop - searches for available war battles and plays them (never stops)"""
+        self.logger.change_status("Starting clan war bot loop (continuous mode - never stops)...")
         war_round = 1
         
         while self.bot.running and not self.shutdown_check():
@@ -36,24 +36,28 @@ class WarRunner:
                 
                 # Search for available war battles (Sudden Death first, then Normal Battle)
                 if not self._find_and_start_war_battle():
-                    self.logger.log("No war battles available or failed to start. Stopping...")
-                    break
+                    self.logger.log("No war battles available right now. Returning to Phase 1...")
+                    time.sleep(3)
+                    continue  # Loop back to Phase 1
                 
                 # Wait for battle to start (60 seconds for war battles due to longer queue times)
                 self.logger.change_status("Waiting for war battle to start (queue time may be longer)...")
                 if not self.bot.wait_for_battle_start(use_fallback=True, timeout=60):
-                    self.logger.log("War battle didn't start after 60 seconds (queue timeout)")
+                    self.logger.log("War battle didn't start after 60 seconds. Restarting search...")
+                    time.sleep(3)
                     continue
                 
                 # Play the battle using normal battle logic
                 self.logger.change_status("War battle started! Playing battle...")
                 if not self._play_war_battle():
-                    self.logger.log("Battle failed or was interrupted")
+                    self.logger.log("Battle failed or was interrupted. Continuing to next battle...")
+                    time.sleep(3)
                     continue
                 
                 # Handle post-battle (click OK button)
                 if not self._handle_war_battle_end():
-                    self.logger.log("Failed to handle post-battle sequence")
+                    self.logger.log("Failed to handle post-battle sequence. Restarting search...")
+                    time.sleep(3)
                     continue
                 
                 # Battle completed successfully
@@ -64,8 +68,9 @@ class WarRunner:
                 war_round += 1
                 
             except Exception as e:
-                self.logger.log(f"Error in war loop: {e}")
-                time.sleep(2)
+                self.logger.log(f"Error in war loop: {e}. Returning to Phase 1...")
+                time.sleep(3)
+                continue  # Always continue, never stop
         
         self.logger.log(f"War mode stopped. Total battles completed: {self.battle_count}")
     
@@ -77,10 +82,10 @@ class WarRunner:
         """
         self.logger.change_status("Searching for available war battles...")
         
-        # Phase 1: Look for Sudden Death first, then Normal Battle
+        # Phase 1: Look for all four battle types and randomly select one
         war_battle_found = False
         start_time = time.time()
-        search_timeout = 30  # 30 seconds to find war battle button
+        search_timeout = 60  # Increased to 60 seconds to find war battle button
         
         while time.time() - start_time < search_timeout:
             if not self.bot.running or self.shutdown_check():
@@ -91,20 +96,34 @@ class WarRunner:
                 time.sleep(1)
                 continue
             
-            # Check for Sudden Death first (higher priority)
+            # Check for all four battle types
+            available_battles = []
+            
             sudden_death_pos, sd_confidence = self.bot.find_template("sudden_death", screenshot)
             if sudden_death_pos and sd_confidence > 0.7:
-                self.logger.log(f"Found Sudden Death battle (confidence: {sd_confidence:.2f}), clicking...")
-                self.bot.tap_screen(sudden_death_pos[0], sudden_death_pos[1])
-                war_battle_found = True
-                time.sleep(2)  # Wait for screen transition
-                break
+                available_battles.append(("Sudden Death", sudden_death_pos, sd_confidence))
             
-            # Check for Normal Battle
+            rampup_pos, ru_confidence = self.bot.find_template("rampup", screenshot)
+            if rampup_pos and ru_confidence > 0.7:
+                available_battles.append(("RampUp", rampup_pos, ru_confidence))
+            
             normal_battle_pos, nb_confidence = self.bot.find_template("normal_battle", screenshot)
             if normal_battle_pos and nb_confidence > 0.7:
-                self.logger.log(f"Found Normal Battle (confidence: {nb_confidence:.2f}), clicking...")
-                self.bot.tap_screen(normal_battle_pos[0], normal_battle_pos[1])
+                available_battles.append(("Normal Battle", normal_battle_pos, nb_confidence))
+            
+            touchdown_war_pos, tw_confidence = self.bot.find_template("touchdown_war", screenshot)
+            if touchdown_war_pos and tw_confidence > 0.7:
+                available_battles.append(("Touchdown War", touchdown_war_pos, tw_confidence))
+            
+            # If we found any battles, randomly select one
+            if available_battles:
+                import random
+                selected_battle = random.choice(available_battles)
+                battle_name, battle_pos, battle_confidence = selected_battle
+                
+                self.logger.log(f"Found {len(available_battles)} battle type(s): {[b[0] for b in available_battles]}")
+                self.logger.log(f"Randomly selected: {battle_name} (confidence: {battle_confidence:.2f}), clicking...")
+                self.bot.tap_screen(battle_pos[0], battle_pos[1])
                 war_battle_found = True
                 time.sleep(2)  # Wait for screen transition
                 break
@@ -112,15 +131,15 @@ class WarRunner:
             time.sleep(1)  # Wait before next check
         
         if not war_battle_found:
-            self.logger.log("No war battles found (Sudden Death or Normal Battle)")
+            self.logger.log("No war battles found (Sudden Death, RampUp, Normal Battle, or Touchdown War) - will retry")
             return False
         
-        # Phase 2: Now search for the Battle button and click it
+        # Phase 2: Now search for the Battle button and click it (infinite retry)
         # Also continue checking for war battle buttons in case we need to reselect
         self.logger.change_status("War battle selected, searching for War Battle button...")
         battle_button_found = False
         battle_start_time = time.time()
-        battle_timeout = 1200  # 120 seconds to find and click Battle button
+        battle_timeout = 180  # 180 seconds (3 minutes) to find and click Battle button
         
         while time.time() - battle_start_time < battle_timeout:
             if not self.bot.running or self.shutdown_check():
@@ -143,26 +162,39 @@ class WarRunner:
                 time.sleep(2)  # Wait for battle to start
                 break
             
-            # Second priority: Check if we're back at war selection screen (Sudden Death)
+            # Second priority: Check if we're back at war selection screen - look for all battle types and randomly select
+            available_battles = []
+            
             sudden_death_pos, sd_confidence = self.bot.find_template("sudden_death", screenshot)
             if sudden_death_pos and sd_confidence > 0.7:
-                self.logger.log(f"Returned to war selection - Found Sudden Death (confidence: {sd_confidence:.2f}), clicking again...")
-                self.bot.tap_screen(sudden_death_pos[0], sudden_death_pos[1])
-                time.sleep(2)  # Wait for screen transition
-                continue  # Continue searching for War Battle button
+                available_battles.append(("Sudden Death", sudden_death_pos, sd_confidence))
             
-            # Third priority: Check if we're back at war selection screen (Normal Battle)
+            rampup_pos, ru_confidence = self.bot.find_template("rampup", screenshot)
+            if rampup_pos and ru_confidence > 0.7:
+                available_battles.append(("RampUp", rampup_pos, ru_confidence))
+            
             normal_battle_pos, nb_confidence = self.bot.find_template("normal_battle", screenshot)
             if normal_battle_pos and nb_confidence > 0.7:
-                self.logger.log(f"Returned to war selection - Found Normal Battle (confidence: {nb_confidence:.2f}), clicking again...")
-                self.bot.tap_screen(normal_battle_pos[0], normal_battle_pos[1])
+                available_battles.append(("Normal Battle", normal_battle_pos, nb_confidence))
+            
+            touchdown_war_pos, tw_confidence = self.bot.find_template("touchdown_war", screenshot)
+            if touchdown_war_pos and tw_confidence > 0.7:
+                available_battles.append(("Touchdown War", touchdown_war_pos, tw_confidence))
+            
+            # If we found any battles (returned to war selection), randomly select one
+            if available_battles:
+                import random
+                selected_battle = random.choice(available_battles)
+                battle_name, battle_pos_sel, battle_confidence_sel = selected_battle
+                self.logger.log(f"Returned to war selection - Found {len(available_battles)} battle type(s), randomly selected: {battle_name} (confidence: {battle_confidence_sel:.2f})")
+                self.bot.tap_screen(battle_pos_sel[0], battle_pos_sel[1])
                 time.sleep(2)  # Wait for screen transition
                 continue  # Continue searching for War Battle button
             
             time.sleep(1)  # Wait before next check
         
         if not battle_button_found:
-            self.logger.log(f"War Battle button not found after {battle_timeout} seconds. Stopping...")
+            self.logger.log(f"War Battle button not found after {battle_timeout} seconds - will restart and retry")
             return False
         
         return True
