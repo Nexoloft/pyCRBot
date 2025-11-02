@@ -206,6 +206,7 @@ class WarRunner:
         """
         battle_start_time = time.time()
         cards_played = 0
+        not_in_battle_start = None  # Track when we first detect "not in battle"
         
         self.logger.change_status("Playing war battle...")
         
@@ -214,8 +215,26 @@ class WarRunner:
             
             # Check if still in battle
             if not self.bot.is_in_battle():
-                self.logger.log("War battle ended - no longer in battle")
-                break
+                # First time detecting "not in battle"
+                if not_in_battle_start is None:
+                    not_in_battle_start = time.time()
+                    self.logger.log("Battle end detected, waiting 15 seconds to confirm...")
+                
+                # Check if we've been "not in battle" for 15 seconds
+                not_in_battle_duration = time.time() - not_in_battle_start
+                if not_in_battle_duration >= 15:
+                    self.logger.log(f"War battle ended - not in battle for {not_in_battle_duration:.1f}s")
+                    break
+                else:
+                    # Still waiting for confirmation
+                    self.logger.change_status(f"Confirming battle end... ({not_in_battle_duration:.1f}s / 15s)")
+                    time.sleep(1)
+                    continue
+            else:
+                # Back in battle, reset the timer
+                if not_in_battle_start is not None:
+                    self.logger.log("False alarm - still in battle, resetting end detection timer")
+                    not_in_battle_start = None
             
             # Check for battle timeout (5 minutes max)
             if battle_elapsed > 300:
