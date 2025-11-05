@@ -49,16 +49,6 @@ def verify_template_images():
     return True
 
 
-def print_help():
-    """Print help information"""
-    print("Usage:")
-    print("  python main.py              # Run normal battle bot")
-    print("  python main.py --upgrade    # Run card upgrade bot")
-    print("  python main.py -u           # Run card upgrade bot (short)")
-    print("  python main.py --battlepass # Run battlepass claiming bot")
-    print("  python main.py --war        # Run clan war bot")
-    print("  python main.py --no-gui     # Disable GUI-like console display")
-    print("  python main.py --help       # Show this help")
 
 
 def run_upgrade_mode(instances, logger_callback=None):
@@ -369,26 +359,7 @@ def main(mode='battle', **kwargs):
     print("Multi-MEmu Clash Royale Bot")
     print("=" * 40)
     
-    # Check for legacy command line arguments if no mode specified
-    no_gui_mode = False  # Default value
-    if mode == 'battle':
-        upgrade_mode = "--upgrade" in sys.argv or "-u" in sys.argv
-        battlepass_mode = "--battlepass" in sys.argv
-        war_mode = "--war" in sys.argv
-        no_gui_mode = "--no-gui" in sys.argv
-        if "--help" in sys.argv or "-h" in sys.argv:
-            print_help()
-            return
-        if war_mode:
-            mode = 'war'
-        elif battlepass_mode:
-            mode = 'battlepass'
-        elif upgrade_mode:
-            mode = 'upgrade'
-        else:
-            mode = 'battle'
-    else:
-        no_gui_mode = kwargs.get('no_gui', False)
+    no_gui_mode = kwargs.get('no_gui', False)
     
     # Verify template images exist
     if not verify_template_images():
