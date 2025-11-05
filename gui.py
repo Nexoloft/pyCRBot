@@ -41,7 +41,7 @@ class ClashRoyaleBotGUI:
         instances_frame = ttk.LabelFrame(self.root, text="Available MEmu Instances", padding=10)
         instances_frame.pack(fill="x", padx=20, pady=10)
         
-        self.instances_listbox = tk.Listbox(instances_frame, height=6)
+        self.instances_listbox = tk.Listbox(instances_frame, height=6, selectmode=tk.EXTENDED)
         self.instances_listbox.pack(fill="x")
         
         refresh_btn = ttk.Button(instances_frame, text="Refresh Instances", command=self.refresh_instances)
@@ -140,6 +140,14 @@ class ClashRoyaleBotGUI:
     
     def start_bot(self):
         """Start the bot in selected mode"""
+        selected_indices = self.instances_listbox.curselection()
+
+        if not selected_indices:
+            messagebox.showerror("Error", "No MEmu instances selected. Please select at least one.")
+            return
+
+        selected_instances = [self.instances[i] for i in selected_indices]
+
         if not self.instances:
             messagebox.showerror("Error", "No MEmu instances available. Please refresh instances.")
             return
@@ -149,7 +157,7 @@ class ClashRoyaleBotGUI:
             return
         
         mode = self.mode_var.get()
-        self.log_status(f"🚀 Starting bot in {mode} mode with {len(self.instances)} instance(s)...")
+        self.log_status(f"🚀 Starting bot in {mode} mode with {len(selected_instances)} instance(s)...")
         
         # Disable start button, enable stop button
         self.start_btn.config(state="disabled")
@@ -158,11 +166,11 @@ class ClashRoyaleBotGUI:
         
         # Start bot in separate thread
         if mode == "battle":
-            self.bot_thread = threading.Thread(target=self._run_battle_mode, daemon=True)
+            self.bot_thread = threading.Thread(target=self._run_battle_mode, args=(selected_instances,), daemon=True)
         elif mode == "upgrade":
-            self.bot_thread = threading.Thread(target=self._run_upgrade_mode, daemon=True)
+            self.bot_thread = threading.Thread(target=self._run_upgrade_mode, args=(selected_instances,), daemon=True)
         elif mode == "battlepass":
-            self.bot_thread = threading.Thread(target=self._run_battlepass_mode, daemon=True)
+            self.bot_thread = threading.Thread(target=self._run_battlepass_mode, args=(selected_instances,), daemon=True)
         
         self.bot_thread.start()
     
@@ -180,28 +188,28 @@ class ClashRoyaleBotGUI:
         
         self.log_status("✅ Bot stopped")
     
-    def _run_battle_mode(self):
+    def _run_battle_mode(self, selected_instances):
         """Run battle mode in thread"""
         try:
-            run_battle_mode(self.instances, logger_callback=self.log_status)
+            run_battle_mode(selected_instances, logger_callback=self.log_status)
         except Exception as e:
             self.log_status(f"❌ Error in battle mode: {e}")
         finally:
             self.root.after(0, self.stop_bot)
 
-    def _run_upgrade_mode(self):
+    def _run_upgrade_mode(self, selected_instances):
         """Run upgrade mode in thread"""
         try:
-            run_upgrade_mode(self.instances, logger_callback=self.log_status)
+            run_upgrade_mode(selected_instances, logger_callback=self.log_status)
         except Exception as e:
             self.log_status(f"❌ Error in upgrade mode: {e}")
         finally:
             self.root.after(0, self.stop_bot)
 
-    def _run_battlepass_mode(self):
+    def _run_battlepass_mode(self, selected_instances):
         """Run battlepass mode in thread"""
         try:
-            run_battlepass_mode(self.instances, logger_callback=self.log_status)
+            run_battlepass_mode(selected_instances, logger_callback=self.log_status)
         except Exception as e:
             self.log_status(f"❌ Error in battlepass mode: {e}")
         finally:
