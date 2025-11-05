@@ -9,25 +9,32 @@ from datetime import datetime
 
 class Logger:
     """Advanced logging and statistics tracking system"""
-    
-    def __init__(self, instance_name: str, timed: bool = True, use_console_display: bool = True, callback=None):
+
+    def __init__(
+        self,
+        instance_name: str,
+        timed: bool = True,
+        use_console_display: bool = True,
+        callback=None,
+    ):
         self.instance_name = instance_name
         self.timed = timed
         self.start_time = time.time() if timed else None
         self.current_status = "Initializing"
         self.use_console_display = use_console_display
         self.callback = callback
-        
+
         # Import here to avoid circular imports
         if use_console_display:
             try:
                 from console_display import console_display
+
                 self.console_display = console_display
                 self.console_display.add_emulator(instance_name)
             except ImportError:
                 self.console_display = None
                 self.use_console_display = False
-        
+
         # Battle statistics
         self.stats = {
             # Battle stats
@@ -40,20 +47,18 @@ class Logger:
             "trophy_road_fights": 0,
             "classic_1v1_fights": 0,
             "classic_2v2_fights": 0,
-            
             # Collection stats
             "chests_opened": 0,
             "cards_upgraded": 0,
             "requests_made": 0,
             "donations_made": 0,
-            
             # Bot stats
             "runtime_seconds": 0,
             "failures": 0,
             "restarts": 0,
-            "last_activity": "Starting"
+            "last_activity": "Starting",
         }
-        
+
         # Action system for user interaction
         self.action_needed = False
         self.action_text = ""
@@ -63,7 +68,7 @@ class Logger:
     def log(self, message: str):
         """Log a message with timestamp"""
         timestamp = datetime.now().strftime("%H:%M:%S")
-        
+
         if self.callback:
             self.callback(f"[{timestamp}] [{self.instance_name}] {message}")
         elif self.use_console_display and self.console_display:
@@ -75,7 +80,7 @@ class Logger:
         """Change the current status and log it"""
         self.current_status = status
         self.stats["last_activity"] = status
-        
+
         # Update console display if available
         if self.use_console_display and self.console_display:
             self.console_display.update_emulator_status(self.instance_name, status)
@@ -91,14 +96,14 @@ class Logger:
         """Calculate time since start"""
         if not self.timed or self.start_time is None:
             return "Not timed"
-        
+
         elapsed = time.time() - self.start_time
         self.stats["runtime_seconds"] = int(elapsed)
-        
+
         hours = int(elapsed // 3600)
         minutes = int((elapsed % 3600) // 60)
         seconds = int(elapsed % 60)
-        
+
         return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     def get_stats(self) -> Dict[str, Any]:
@@ -106,20 +111,20 @@ class Logger:
         # Update runtime
         if self.timed and self.start_time:
             self.stats["runtime_seconds"] = int(time.time() - self.start_time)
-        
+
         # Calculate derived stats
         total_battles = self.stats["wins"] + self.stats["losses"]
         self.stats["total_battles"] = total_battles
-        
+
         # Calculate win rate
         if total_battles > 0:
             win_rate = (self.stats["wins"] / total_battles) * 100
             self.stats["win_rate"] = f"{win_rate:.1f}%"
         else:
             self.stats["win_rate"] = "N/A"
-        
+
         return self.stats.copy()
-    
+
     def _update_console_stats(self):
         """Update console display with current stats"""
         if self.use_console_display and self.console_display:
@@ -129,7 +134,7 @@ class Logger:
                 wins=self.stats["wins"],
                 losses=self.stats["losses"],
                 cards_played=self.stats["cards_played"],
-                restarts=self.stats["restarts"]
+                restarts=self.stats["restarts"],
             )
 
     # Battle stat methods
@@ -234,18 +239,20 @@ class Logger:
         """Log a summary of statistics"""
         stats = self.get_stats()
         runtime = self.calc_time_since_start()
-        
+
         # Remove from console display
         if self.use_console_display and self.console_display:
             self.console_display.remove_emulator(self.instance_name)
-        
+
         # Log traditional summary if console display is not being used
         if not self.use_console_display:
             self.log("=" * 50)
             self.log("SESSION SUMMARY")
             self.log("=" * 50)
             self.log(f"Runtime: {runtime}")
-            self.log(f"Battles: {stats['total_battles']} (W: {stats['wins']}, L: {stats['losses']})")
+            self.log(
+                f"Battles: {stats['total_battles']} (W: {stats['wins']}, L: {stats['losses']})"
+            )
             self.log(f"Win Rate: {stats['win_rate']}")
             self.log(f"Cards Played: {stats['cards_played']}")
             self.log(f"Chests Opened: {stats['chests_opened']}")
