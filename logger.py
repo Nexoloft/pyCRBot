@@ -10,12 +10,13 @@ from datetime import datetime
 class Logger:
     """Advanced logging and statistics tracking system"""
     
-    def __init__(self, instance_name: str, timed: bool = True, use_console_display: bool = True):
+    def __init__(self, instance_name: str, timed: bool = True, use_console_display: bool = True, callback=None):
         self.instance_name = instance_name
         self.timed = timed
         self.start_time = time.time() if timed else None
         self.current_status = "Initializing"
         self.use_console_display = use_console_display
+        self.callback = callback
         
         # Import here to avoid circular imports
         if use_console_display:
@@ -63,11 +64,11 @@ class Logger:
         """Log a message with timestamp"""
         timestamp = datetime.now().strftime("%H:%M:%S")
         
-        # Update console display if available
-        if self.use_console_display and self.console_display:
+        if self.callback:
+            self.callback(f"[{timestamp}] [{self.instance_name}] {message}")
+        elif self.use_console_display and self.console_display:
             self.console_display.log_message(self.instance_name, message)
         else:
-            # Fallback to regular console output
             print(f"[{timestamp}] [{self.instance_name}] {message}")
 
     def change_status(self, status: str):

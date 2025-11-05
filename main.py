@@ -61,7 +61,7 @@ def print_help():
     print("  python main.py --help       # Show this help")
 
 
-def run_upgrade_mode(instances):
+def run_upgrade_mode(instances, logger_callback=None):
     """Run the bot in card upgrade mode"""
     print(f"\n🔧 UPGRADE MODE: Will upgrade cards on {len(instances)} MEmu instance(s)")
     print("Starting card upgrade bots...")
@@ -69,7 +69,7 @@ def run_upgrade_mode(instances):
     # Create bot instances for upgrading
     bots = []
     for device_id, instance_name in instances:
-        bot = EmulatorBot(device_id, instance_name)
+        bot = EmulatorBot(device_id, instance_name, use_console_display=logger_callback is None, logger_callback=logger_callback)
         bots.append(bot)
     
     # Start upgrade threads
@@ -105,7 +105,7 @@ def run_upgrade_mode(instances):
             print("All upgrade bots stopped. Goodbye!")
 
 
-def run_battlepass_mode(instances):
+def run_battlepass_mode(instances, logger_callback=None):
     """Run the bot in battlepass claiming mode"""
     print(f"\n🎁 BATTLEPASS MODE: Will claim battlepass rewards on {len(instances)} MEmu instance(s)")
     print("Starting battlepass claiming bots...")
@@ -113,7 +113,7 @@ def run_battlepass_mode(instances):
     # Create bot instances for claiming battlepass
     bots = []
     for device_id, instance_name in instances:
-        bot = EmulatorBot(device_id, instance_name)
+        bot = EmulatorBot(device_id, instance_name, use_console_display=logger_callback is None, logger_callback=logger_callback)
         bots.append(bot)
     
     # Start battlepass threads
@@ -149,14 +149,14 @@ def run_battlepass_mode(instances):
             print("All battlepass claiming bots stopped. Goodbye!")
 
 
-def run_war_mode(instances, max_battles=0, no_gui=False):
+def run_war_mode(instances, max_battles=0, no_gui=False, logger_callback=None):
     """Run the bot in clan war mode"""
     print(f"\n⚔️ WAR MODE: Will play clan wars on {len(instances)} MEmu instance(s)")
     if max_battles > 0:
         print(f"🎯 Battle limit: {max_battles} per emulator")
     
     # Start console display only if GUI mode is enabled
-    if not no_gui:
+    if not no_gui and logger_callback is None:
         console_display.start_display()
     
     # Create bot instances
@@ -173,10 +173,10 @@ def run_war_mode(instances, max_battles=0, no_gui=False):
                 port = instance.get('port', 21503)
                 device_id = f"127.0.0.1:{port}"
                 instance_name = f"MEmu_{i + 1}"
-            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui and logger_callback is None, logger_callback=logger_callback)
         else:
             device_id, instance_name = instance
-            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui and logger_callback is None, logger_callback=logger_callback)
         
         runner = WarRunner(bot, lambda: shutdown_requested, max_battles=max_battles)
         bots.append(bot)
@@ -224,14 +224,14 @@ def run_war_mode(instances, max_battles=0, no_gui=False):
                 print("All war bots stopped. Goodbye!")
 
 
-def run_battle_mode(instances, max_battles=0, no_gui=False):
+def run_battle_mode(instances, max_battles=0, no_gui=False, logger_callback=None):
     """Run the bot in battle mode"""
     print(f"\n⚔️ BATTLE MODE: Found {len(instances)} MEmu instance(s). Starting battle bots...")
     if max_battles > 0:
         print(f"🎯 Battle limit: {max_battles} per emulator")
     
     # Start console display only if GUI mode is enabled
-    if not no_gui:
+    if not no_gui and logger_callback is None:
         console_display.start_display()
     
     # Create bot instances
@@ -250,11 +250,11 @@ def run_battle_mode(instances, max_battles=0, no_gui=False):
                 port = instance.get('port', 21503)
                 device_id = f"127.0.0.1:{port}"
                 instance_name = f"MEmu_{i + 1}"
-            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui and logger_callback is None, logger_callback=logger_callback)
         else:
             # Legacy format (device_id, instance_name)
             device_id, instance_name = instance
-            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui)
+            bot = EmulatorBot(device_id, instance_name, use_console_display=not no_gui and logger_callback is None, logger_callback=logger_callback)
         
         runner = BattleRunner(bot, lambda: shutdown_requested, max_battles=max_battles)
         bots.append(bot)
@@ -321,7 +321,7 @@ def main(mode='battle', **kwargs):
             from gui import ClashRoyaleBotGUI
             import tkinter as tk
             root = tk.Tk()
-            ClashRoyaleBotGUI()  # GUI manages its own root
+            ClashRoyaleBotGUI(root)  # GUI manages its own root
             root.mainloop()
             return
         except ImportError as e:

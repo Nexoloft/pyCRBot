@@ -11,8 +11,8 @@ from main import detect_memu_instances, verify_template_images, run_battle_mode,
 class ClashRoyaleBotGUI:
     """Simple GUI for the Clash Royale Bot"""
     
-    def __init__(self):
-        self.root = tk.Tk()
+    def __init__(self, root):
+        self.root = root
         self.root.title("Clash Royale Multi-Bot Controller")
         self.root.geometry("600x500")
         self.root.resizable(False, False)
@@ -183,29 +183,29 @@ class ClashRoyaleBotGUI:
     def _run_battle_mode(self):
         """Run battle mode in thread"""
         try:
-            run_battle_mode(self.instances)
+            run_battle_mode(self.instances, logger_callback=self.log_status)
         except Exception as e:
             self.log_status(f"❌ Error in battle mode: {e}")
         finally:
-            self.root.after(0, self.stop_bot)  # Update GUI from main thread
-    
+            self.root.after(0, self.stop_bot)
+
     def _run_upgrade_mode(self):
         """Run upgrade mode in thread"""
         try:
-            run_upgrade_mode(self.instances)
+            run_upgrade_mode(self.instances, logger_callback=self.log_status)
         except Exception as e:
             self.log_status(f"❌ Error in upgrade mode: {e}")
         finally:
-            self.root.after(0, self.stop_bot)  # Update GUI from main thread
-    
+            self.root.after(0, self.stop_bot)
+
     def _run_battlepass_mode(self):
         """Run battlepass mode in thread"""
         try:
-            run_battlepass_mode(self.instances)
+            run_battlepass_mode(self.instances, logger_callback=self.log_status)
         except Exception as e:
             self.log_status(f"❌ Error in battlepass mode: {e}")
         finally:
-            self.root.after(0, self.stop_bot)  # Update GUI from main thread
+            self.root.after(0, self.stop_bot)
     
     def log_status(self, message):
         """Add a status message to the text widget"""
@@ -228,7 +228,8 @@ class ClashRoyaleBotGUI:
 def main_gui():
     """Launch the GUI version of the bot"""
     try:
-        app = ClashRoyaleBotGUI()
+        root = tk.Tk()
+        app = ClashRoyaleBotGUI(root)
         app.run()
     except Exception as e:
         print(f"GUI Error: {e}")
