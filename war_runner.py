@@ -146,6 +146,20 @@ class WarRunner:
                     ("Touchdown War", touchdown_war_pos, tw_confidence)
                 )
 
+            two_x_war_pos, txw_confidence = self.bot.find_template(
+                "2x_war", screenshot
+            )
+            if two_x_war_pos and txw_confidence > 0.7:
+                available_battles.append(("2x War", two_x_war_pos, txw_confidence))
+
+            col_war_pos, cw_confidence = self.bot.find_template(
+                "col_war", screenshot
+            )
+            if col_war_pos and cw_confidence > 0.7:
+                available_battles.append(
+                    ("Collection War", col_war_pos, cw_confidence)
+                )
+
             # If we found any battles, randomly select one
             if available_battles:
                 import random
@@ -237,6 +251,20 @@ class WarRunner:
             if touchdown_war_pos and tw_confidence > 0.7:
                 available_battles.append(
                     ("Touchdown War", touchdown_war_pos, tw_confidence)
+                )
+
+            two_x_war_pos, txw_confidence = self.bot.find_template(
+                "2x_war", screenshot
+            )
+            if two_x_war_pos and txw_confidence > 0.7:
+                available_battles.append(("2x War", two_x_war_pos, txw_confidence))
+
+            col_war_pos, cw_confidence = self.bot.find_template(
+                "col_war", screenshot
+            )
+            if col_war_pos and cw_confidence > 0.7:
+                available_battles.append(
+                    ("Collection War", col_war_pos, cw_confidence)
                 )
 
             # If we found any battles (returned to war selection), randomly select one

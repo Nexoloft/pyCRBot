@@ -44,6 +44,8 @@ REF_IMAGES = {
     "sudden_death": "templates/SuddenDeath.png",
     "rampup": "templates/RampUp.png",
     "touchdown_war": "templates/TouchdownWar.png",
+    "2x_war": "templates/2xWar.png",
+    "col_war": "templates/ColWar.png"
 }
 
 # Confidence threshold for image matching
