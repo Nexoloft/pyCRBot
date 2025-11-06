@@ -25,6 +25,12 @@ CARD_SLOTS = [
     (342, 537),  # Card 4
 ]
 
+# Bridge positions for strategic card placement
+BRIDGE_POSITIONS = [
+    (127, 136),  # Left bridge
+    (301, 134),  # Right bridge
+]
+
 # Play area coordinates
 PLAY_AREA = {"min_x": 57, "max_x": 360, "min_y": 416, "max_y": 472}
 
@@ -151,3 +157,19 @@ BATTLE_CHECK_INTERVAL = 0.5
 ELIXIR_CHECK_INTERVAL = 2.0
 DOUBLE_ELIXIR_CHECK_INTERVAL = 3.0
 SCREENSHOT_DELAY = 0.05
+
+# Default timeouts
+DEFAULT_TIMEOUTS = {
+    "battle_start": 45,
+    "wait_for_elixir": 30,
+    "post_battle": 60,
+    "war_battle_search": 60,
+    "war_battle_button": 180,
+    "app_restart": 30,
+}
+
+# Fallback/retry settings
+FALLBACK_CLICK_COUNT = 12
+FALLBACK_CLICK_INTERVAL = 3.0
+MAX_RECOVERY_ATTEMPTS = 3
+MAX_BATTLE_END_ATTEMPTS = 3

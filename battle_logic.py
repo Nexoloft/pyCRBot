@@ -7,6 +7,7 @@ import random
 from config import (
     CARD_SLOTS,
     PLAY_AREA,
+    BRIDGE_POSITIONS,
     ELIXIR_COORDS,
     PURPLE_COLORS,
     BATTLE_PIXELS_1V1,
@@ -226,8 +227,7 @@ class BattleLogic:
         """Generate a strategic position within the play area"""
         if random.randint(0, 2) == 0:  # 33% chance for bridge play
             # Bridge positions (more strategic)
-            place_x = random.choice([120, 300])  # Left or right bridge
-            place_y = random.randint(PLAY_AREA["min_y"], PLAY_AREA["max_y"])
+            place_x, place_y = random.choice(BRIDGE_POSITIONS)  # Left or right bridge
         else:
             # Random position in play area
             place_x = random.randint(PLAY_AREA["min_x"], PLAY_AREA["max_x"])

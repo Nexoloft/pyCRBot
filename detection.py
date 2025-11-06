@@ -81,11 +81,27 @@ class ImageDetector:
 
         return True
 
-    def pixel_matches_color(self, pixel, expected_color, tolerance=25):
-        """Check if a pixel matches an expected color within tolerance"""
+    def pixel_matches_color(self, pixel, expected_color, tolerance=25, format='bgr'):
+        """
+        Check if a pixel matches an expected color within tolerance.
+        
+        Args:
+            pixel: Pixel value (list or array of RGB/BGR values)
+            expected_color: Expected color in RGB format
+            tolerance: Color tolerance value
+            format: 'bgr' for OpenCV BGR format, 'rgb' for RGB format
+        
+        Returns:
+            bool: True if pixel matches, False otherwise
+        """
         try:
-            # Convert BGR to RGB for comparison
-            pixel_rgb = [int(pixel[2]), int(pixel[1]), int(pixel[0])]
+            if format == 'bgr':
+                # Convert BGR to RGB for comparison
+                pixel_rgb = [int(pixel[2]), int(pixel[1]), int(pixel[0])]
+            else:
+                # Already in RGB format
+                pixel_rgb = [int(pixel[0]), int(pixel[1]), int(pixel[2])]
+            
             for i in range(3):
                 if abs(pixel_rgb[i] - expected_color[i]) > tolerance:
                     return False
@@ -94,14 +110,11 @@ class ImageDetector:
             return False
 
     def pixel_matches_color_rgb(self, pixel_rgb, expected_color, tolerance=25):
-        """Check if a pixel (in RGB format) matches an expected color within tolerance"""
-        try:
-            for i in range(3):
-                if abs(pixel_rgb[i] - expected_color[i]) > tolerance:
-                    return False
-            return True
-        except (IndexError, TypeError):
-            return False
+        """
+        Convenience method for RGB format pixels.
+        Deprecated: Use pixel_matches_color with format='rgb' instead.
+        """
+        return self.pixel_matches_color(pixel_rgb, expected_color, tolerance, format='rgb')
 
     def all_pixels_match(self, pixels, colors, tolerance=25):
         """Helper method to check if all pixels match expected colors within tolerance"""

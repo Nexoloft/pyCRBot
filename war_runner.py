@@ -4,6 +4,8 @@ Automatically searches for and plays clan war battles
 """
 
 import time
+from war_utils import find_available_war_battles, click_battle_if_found
+from config import DEFAULT_TIMEOUTS
 
 
 class WarRunner:
@@ -101,10 +103,10 @@ class WarRunner:
         """
         self.logger.change_status("Searching for available war battles...")
 
-        # Phase 1: Look for all four battle types and randomly select one
+        # Phase 1: Look for all battle types and randomly select one
         war_battle_found = False
         start_time = time.time()
-        search_timeout = 60  # Increased to 60 seconds to find war battle button
+        search_timeout = DEFAULT_TIMEOUTS.get("war_battle_search", 60)
 
         while time.time() - start_time < search_timeout:
             if not self.bot.running or self.shutdown_check():
@@ -115,68 +117,14 @@ class WarRunner:
                 time.sleep(1)
                 continue
 
-            # Check for all four battle types
-            available_battles = []
+            # Use the new utility function to find available battles
+            available_battles = find_available_war_battles(self.bot, screenshot)
 
-            sudden_death_pos, sd_confidence = self.bot.find_template(
-                "sudden_death", screenshot
-            )
-            if sudden_death_pos and sd_confidence > 0.7:
-                available_battles.append(
-                    ("Sudden Death", sudden_death_pos, sd_confidence)
-                )
-
-            rampup_pos, ru_confidence = self.bot.find_template("rampup", screenshot)
-            if rampup_pos and ru_confidence > 0.7:
-                available_battles.append(("RampUp", rampup_pos, ru_confidence))
-
-            normal_battle_pos, nb_confidence = self.bot.find_template(
-                "normal_battle", screenshot
-            )
-            if normal_battle_pos and nb_confidence > 0.7:
-                available_battles.append(
-                    ("Normal Battle", normal_battle_pos, nb_confidence)
-                )
-
-            touchdown_war_pos, tw_confidence = self.bot.find_template(
-                "touchdown_war", screenshot
-            )
-            if touchdown_war_pos and tw_confidence > 0.7:
-                available_battles.append(
-                    ("Touchdown War", touchdown_war_pos, tw_confidence)
-                )
-
-            two_x_war_pos, txw_confidence = self.bot.find_template(
-                "2x_war", screenshot
-            )
-            if two_x_war_pos and txw_confidence > 0.7:
-                available_battles.append(("2x War", two_x_war_pos, txw_confidence))
-
-            col_war_pos, cw_confidence = self.bot.find_template(
-                "col_war", screenshot
-            )
-            if col_war_pos and cw_confidence > 0.7:
-                available_battles.append(
-                    ("Collection War", col_war_pos, cw_confidence)
-                )
-
-            # If we found any battles, randomly select one
+            # If we found any battles, click one
             if available_battles:
-                import random
-
-                selected_battle = random.choice(available_battles)
-                battle_name, battle_pos, battle_confidence = selected_battle
-
-                self.logger.log(
-                    f"Found {len(available_battles)} battle type(s): {[b[0] for b in available_battles]}"
-                )
-                self.logger.log(
-                    f"Randomly selected: {battle_name} (confidence: {battle_confidence:.2f}), clicking..."
-                )
-                self.bot.tap_screen(battle_pos[0], battle_pos[1])
-                war_battle_found = True
-                time.sleep(2)  # Wait for screen transition
-                break
+                if click_battle_if_found(self.bot, available_battles, self.logger, delay=2.0):
+                    war_battle_found = True
+                    break
 
             time.sleep(1)  # Wait before next check
 
@@ -193,7 +141,7 @@ class WarRunner:
         )
         battle_button_found = False
         battle_start_time = time.time()
-        battle_timeout = 180  # 180 seconds (3 minutes) to find and click Battle button
+        battle_timeout = DEFAULT_TIMEOUTS.get("war_battle_button", 180)
 
         while time.time() - battle_start_time < battle_timeout:
             if not self.bot.running or self.shutdown_check():
@@ -222,62 +170,15 @@ class WarRunner:
                 time.sleep(2)  # Wait for battle to start
                 break
 
-            # Second priority: Check if we're back at war selection screen - look for all battle types and randomly select
-            available_battles = []
+            # Second priority: Check if we're back at war selection screen
+            available_battles = find_available_war_battles(self.bot, screenshot)
 
-            sudden_death_pos, sd_confidence = self.bot.find_template(
-                "sudden_death", screenshot
-            )
-            if sudden_death_pos and sd_confidence > 0.7:
-                available_battles.append(
-                    ("Sudden Death", sudden_death_pos, sd_confidence)
-                )
-
-            rampup_pos, ru_confidence = self.bot.find_template("rampup", screenshot)
-            if rampup_pos and ru_confidence > 0.7:
-                available_battles.append(("RampUp", rampup_pos, ru_confidence))
-
-            normal_battle_pos, nb_confidence = self.bot.find_template(
-                "normal_battle", screenshot
-            )
-            if normal_battle_pos and nb_confidence > 0.7:
-                available_battles.append(
-                    ("Normal Battle", normal_battle_pos, nb_confidence)
-                )
-
-            touchdown_war_pos, tw_confidence = self.bot.find_template(
-                "touchdown_war", screenshot
-            )
-            if touchdown_war_pos and tw_confidence > 0.7:
-                available_battles.append(
-                    ("Touchdown War", touchdown_war_pos, tw_confidence)
-                )
-
-            two_x_war_pos, txw_confidence = self.bot.find_template(
-                "2x_war", screenshot
-            )
-            if two_x_war_pos and txw_confidence > 0.7:
-                available_battles.append(("2x War", two_x_war_pos, txw_confidence))
-
-            col_war_pos, cw_confidence = self.bot.find_template(
-                "col_war", screenshot
-            )
-            if col_war_pos and cw_confidence > 0.7:
-                available_battles.append(
-                    ("Collection War", col_war_pos, cw_confidence)
-                )
-
-            # If we found any battles (returned to war selection), randomly select one
+            # If we found any battles (returned to war selection), click one
             if available_battles:
-                import random
-
-                selected_battle = random.choice(available_battles)
-                battle_name, battle_pos_sel, battle_confidence_sel = selected_battle
                 self.logger.log(
-                    f"Returned to war selection - Found {len(available_battles)} battle type(s), randomly selected: {battle_name} (confidence: {battle_confidence_sel:.2f})"
+                    f"Returned to war selection - Found {len(available_battles)} battle type(s)"
                 )
-                self.bot.tap_screen(battle_pos_sel[0], battle_pos_sel[1])
-                time.sleep(2)  # Wait for screen transition
+                click_battle_if_found(self.bot, available_battles, self.logger, delay=2.0)
                 continue  # Continue searching for War Battle button
 
             time.sleep(1)  # Wait before next check
@@ -389,7 +290,7 @@ class WarRunner:
         self.logger.change_status("Handling post-war-battle sequence...")
 
         # Wait for post-battle screen and OK button
-        post_battle_timeout = 60  # 1 minute timeout
+        post_battle_timeout = DEFAULT_TIMEOUTS.get("post_battle", 60)
         start_time = time.time()
 
         while time.time() - start_time < post_battle_timeout:

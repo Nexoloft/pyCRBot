@@ -9,11 +9,15 @@ from detection import ImageDetector
 from battle_logic import BattleLogic
 from battle_strategy import BattleStrategy
 from logger import Logger
+from utils import wait_with_timeout, retry_with_fallback
 from config import (
     CONFIDENCE_THRESHOLD,
     CARD_SELECTION_DELAY,
     FALLBACK_POSITIONS,
     CARD_SLOTS,
+    DEFAULT_TIMEOUTS,
+    FALLBACK_CLICK_COUNT,
+    FALLBACK_CLICK_INTERVAL,
 )
 
 
@@ -114,8 +118,89 @@ class EmulatorBot:
                 return None, None
         return self.detector.find_template(template_name, screenshot, confidence)
 
-    def wait_for_battle_start(self, use_fallback=True, timeout=45):
+    def find_and_click(self, template_name, screenshot=None, confidence=0.7, delay=1.0):
+        """
+        Find template and click if found.
+        
+        Args:
+            template_name: Name of the template to find
+            screenshot: Optional screenshot to use
+            confidence: Minimum confidence threshold
+            delay: Delay after clicking in seconds
+        
+        Returns:
+            bool: True if template was found and clicked, False otherwise
+        """
+        if screenshot is None:
+            screenshot = self.take_screenshot()
+            if screenshot is None:
+                return False
+        
+        pos, conf = self.find_template(template_name, screenshot, confidence)
+        if pos:
+            self.logger.log(f"Found {template_name} (confidence: {conf:.2f}), clicking...")
+            self.tap_screen(pos[0], pos[1])
+            time.sleep(delay)
+            return True
+        return False
+
+    def wait_for_template(self, template_name, timeout=30, confidence=0.7, interval=1.0):
+        """
+        Wait for a template to appear on screen.
+        
+        Args:
+            template_name: Name of the template to find
+            timeout: Maximum time to wait in seconds
+            confidence: Minimum confidence threshold
+            interval: Time between checks in seconds
+        
+        Returns:
+            tuple: (position, confidence) if found, (None, None) if timeout
+        """
+        def check_template():
+            screenshot = self.take_screenshot()
+            if screenshot is None:
+                return False
+            pos, conf = self.find_template(template_name, screenshot, confidence)
+            if pos:
+                self._last_template_result = (pos, conf)
+                return True
+            return False
+        
+        self._last_template_result = (None, None)
+        
+        if wait_with_timeout(check_template, timeout, interval):
+            return self._last_template_result
+        
+        return None, None
+
+    def click_with_retry(self, x, y, check_func, max_attempts=3, delay=1.0):
+        """
+        Click at coordinates with retry logic.
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            check_func: Function to check if click was successful
+            max_attempts: Maximum number of retry attempts
+            delay: Delay between attempts in seconds
+        
+        Returns:
+            bool: True if action succeeded, False if all attempts failed
+        """
+        return retry_with_fallback(
+            action_func=lambda: self.tap_screen(x, y),
+            check_func=check_func,
+            max_attempts=max_attempts,
+            delay=delay,
+            on_retry=lambda attempt: self.logger.log(f"Retry attempt {attempt}/{max_attempts}")
+        )
+
+    def wait_for_battle_start(self, use_fallback=True, timeout=None):
         """Wait for battle to start with improved detection and fallback mechanisms"""
+        if timeout is None:
+            timeout = DEFAULT_TIMEOUTS["battle_start"]
+        
         self.logger.change_status("Waiting for battle to start...")
         start_time = time.time()
         fallback_triggered = False
@@ -163,11 +248,11 @@ class EmulatorBot:
         self.logger.log("Performing enhanced fallback click sequence...")
         fallback_position = FALLBACK_POSITIONS.get("battle_start", (96, 1316))
 
-        for i in range(12):  # Increased from 5 to 12 for better popup handling
+        for i in range(FALLBACK_CLICK_COUNT):
             if not self.running:
                 return False
 
-            self.logger.log(f"Fallback click {i+1}/12")
+            self.logger.log(f"Fallback click {i+1}/{FALLBACK_CLICK_COUNT}")
             self.tap_screen(fallback_position[0], fallback_position[1])
 
             # Check if battle started during the click sequence
@@ -175,8 +260,8 @@ class EmulatorBot:
                 self.logger.log(f"✓ Battle detected during fallback click {i+1}!")
                 return True
 
-            if i < 11:  # Don't wait after the last click
-                time.sleep(3)  # Increased from 2 to 3 seconds for longer intervals
+            if i < FALLBACK_CLICK_COUNT - 1:  # Don't wait after the last click
+                time.sleep(FALLBACK_CLICK_INTERVAL)
 
                 # Check again after the wait
                 if self.is_in_battle():
@@ -281,8 +366,9 @@ class EmulatorBot:
 
         self.logger.change_status(f"Waiting for {target_elixir} elixir...")
         start_time = time.time()
+        timeout = DEFAULT_TIMEOUTS.get("wait_for_elixir", 30)
 
-        while time.time() - start_time < 30:  # 30 second timeout
+        while time.time() - start_time < timeout:
             if not self.running or not self.is_in_battle():
                 return False
 

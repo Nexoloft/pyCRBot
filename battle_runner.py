@@ -3,7 +3,7 @@ Battle loop logic and game coordination - refactored with PyClashBot architectur
 """
 
 import time
-from config import INACTIVITY_TIMEOUT
+from config import INACTIVITY_TIMEOUT, DEFAULT_TIMEOUTS, MAX_RECOVERY_ATTEMPTS, MAX_BATTLE_END_ATTEMPTS
 
 
 class BattleRunner:
@@ -63,16 +63,15 @@ class BattleRunner:
 
                     # Try additional recovery steps before checking timeout
                     recovery_attempts = 0
-                    max_recovery_attempts = 3
 
                     while (
-                        recovery_attempts < max_recovery_attempts
+                        recovery_attempts < MAX_RECOVERY_ATTEMPTS
                         and self.bot.running
                         and not self.shutdown_check()
                     ):
                         recovery_attempts += 1
                         self.logger.log(
-                            f"Recovery attempt {recovery_attempts}/{max_recovery_attempts}"
+                            f"Recovery attempt {recovery_attempts}/{MAX_RECOVERY_ATTEMPTS}"
                         )
 
                         # Try clicking battle button as fallback
@@ -175,12 +174,11 @@ class BattleRunner:
 
                 # Wait for battle to end and handle post-battle
                 battle_end_attempts = 0
-                max_battle_end_attempts = 3
 
-                while battle_end_attempts < max_battle_end_attempts:
+                while battle_end_attempts < MAX_BATTLE_END_ATTEMPTS:
                     battle_end_attempts += 1
                     self.logger.log(
-                        f"Battle end attempt {battle_end_attempts}/{max_battle_end_attempts}"
+                        f"Battle end attempt {battle_end_attempts}/{MAX_BATTLE_END_ATTEMPTS}"
                     )
 
                     if self._handle_battle_end():
@@ -188,7 +186,7 @@ class BattleRunner:
                         break
                     else:
                         self.logger.log("Issues with post-battle sequence, retrying...")
-                        if battle_end_attempts < max_battle_end_attempts:
+                        if battle_end_attempts < MAX_BATTLE_END_ATTEMPTS:
                             # Try some recovery clicks before next attempt
                             self.bot.tap_screen(21, 511)  # OK button fallback
                             time.sleep(1)
@@ -328,7 +326,7 @@ class BattleRunner:
         self.logger.change_status("Handling post-battle sequence...")
 
         # Wait for post-battle screen to appear
-        post_battle_timeout = 60  # 1 minute timeout
+        post_battle_timeout = DEFAULT_TIMEOUTS.get("post_battle", 60)
         start_time = time.time()
 
         while time.time() - start_time < post_battle_timeout:
