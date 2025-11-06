@@ -1,5 +1,6 @@
 """Basic smoke test to ensure core modules import correctly after cleanup."""
 
+
 def test_core_imports():
     from emulator_bot import EmulatorBot  # noqa: F401
     from battle_runner import BattleRunner  # noqa: F401

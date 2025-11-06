@@ -1,19 +1,11 @@
-"""
-Requirements for the Multi-MEmu Clash Royale Bot
-"""
-
-# Core dependencies for the bot functionality
-# opencv-python>=4.5.0  # For image processing and template matching
-# numpy>=1.19.0         # For array operations (required by opencv)
-
-# Note: These dependencies need to be installed via:
-# pip install opencv-python numpy
-
-# Standard library modules used (no installation required):
-# - os (file operations)
-# - sys (system operations)
-# - time (timing and delays)
-# - signal (graceful shutdown)
-# - subprocess (ADB communication)
-# - random (random number generation)
-# - concurrent.futures (multi-threading)
+greenlet==3.2.4
+iniconfig==2.3.0
+numpy==2.2.6
+opencv-python==4.12.0.88
+packaging==25.0
+playwright==1.55.0
+pluggy==1.6.0
+pyee==13.0.0
+Pygments==2.19.2
+pytest==8.4.2
+typing_extensions==4.15.0
