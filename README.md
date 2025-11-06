@@ -12,11 +12,6 @@ Quick start:
 ```cmd
 python run.py --battlepass
 ```
-Or via legacy entry:
-```cmd
-python main.py --battlepass
-```
-GUI: launch with `python run.py --gui`, pick "Battlepass Mode - Automatically claim battlepass rewards", then Start.
 
 How it works:
 1. Repeatedly clicks at (114, 271) to advance the pass track
@@ -96,8 +91,7 @@ Legacy cleanup: Deprecated duplicate files (battle_runner_new.py, emulator_bot_n
 - **Recovery Systems**: Automatic app restart and error recovery
 
 ### 🖥️ **User Interface**
-- **GUI Mode**: Easy-to-use graphical interface (recommended)
-- **CLI Mode**: Command-line interface for advanced users
+- **CLI Mode**: Command-line interface
 - **Real-time Statistics**: Live battle statistics and performance metrics
 - **Status Monitoring**: Detailed logging and status updates
 
@@ -129,18 +123,9 @@ Ensure all template images are present in the `templates/` folder:
 
 ## 🎯 Usage
 
-### GUI Mode (Recommended)
-```bash
-python run.py --gui
-```
-- User-friendly interface
-- Real-time status updates
-- Easy mode switching
-- Instance management
-
 ### CLI Mode
 ```bash
-# Battle mode
+# Battle mode (single emulator)
 python run.py --headless
 
 # Multiple emulators (battle mode)
@@ -177,9 +162,8 @@ pyCRBot/
 ├── emulator_bot.py     # Main bot class
 ├── logger.py           # Statistics and logging
 ├── config.py           # Configuration constants
-├── gui.py              # GUI interface
-├── main.py             # CLI interface
-├── run.py              # Enhanced entry point
+├── main.py             # Main interface
+├── run.py              # Entry point
 └── WAR_MODE.md         # War mode documentation
 ```
 

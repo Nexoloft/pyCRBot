@@ -10,30 +10,11 @@ from datetime import datetime
 class Logger:
     """Advanced logging and statistics tracking system"""
 
-    def __init__(
-        self,
-        instance_name: str,
-        timed: bool = True,
-        use_console_display: bool = True,
-        callback=None,
-    ):
+    def __init__(self, instance_name: str, timed: bool = True):
         self.instance_name = instance_name
         self.timed = timed
         self.start_time = time.time() if timed else None
         self.current_status = "Initializing"
-        self.use_console_display = use_console_display
-        self.callback = callback
-
-        # Import here to avoid circular imports
-        if use_console_display:
-            try:
-                from console_display import console_display
-
-                self.console_display = console_display
-                self.console_display.add_emulator(instance_name)
-            except ImportError:
-                self.console_display = None
-                self.use_console_display = False
 
         # Battle statistics
         self.stats = {
@@ -68,25 +49,13 @@ class Logger:
     def log(self, message: str):
         """Log a message with timestamp"""
         timestamp = datetime.now().strftime("%H:%M:%S")
-
-        if self.callback:
-            self.callback(f"[{timestamp}] [{self.instance_name}] {message}")
-        elif self.use_console_display and self.console_display:
-            self.console_display.log_message(self.instance_name, message)
-        else:
-            print(f"[{timestamp}] [{self.instance_name}] {message}")
+        print(f"[{timestamp}] [{self.instance_name}] {message}")
 
     def change_status(self, status: str):
         """Change the current status and log it"""
         self.current_status = status
         self.stats["last_activity"] = status
-
-        # Update console display if available
-        if self.use_console_display and self.console_display:
-            self.console_display.update_emulator_status(self.instance_name, status)
-        else:
-            # Fallback to regular logging
-            self.log(status)
+        self.log(status)
 
     def get_status(self) -> str:
         """Get current status"""
@@ -126,34 +95,23 @@ class Logger:
         return self.stats.copy()
 
     def _update_console_stats(self):
-        """Update console display with current stats"""
-        if self.use_console_display and self.console_display:
-            self.console_display.update_emulator_stats(
-                self.instance_name,
-                battles=self.stats["wins"] + self.stats["losses"],
-                wins=self.stats["wins"],
-                losses=self.stats["losses"],
-                cards_played=self.stats["cards_played"],
-                restarts=self.stats["restarts"],
-            )
+        """Update console display with current stats (deprecated - no-op)"""
+        pass
 
     # Battle stat methods
     def add_win(self):
         """Record a win"""
         self.stats["wins"] += 1
         self.log(f"🏆 Win recorded! Total wins: {self.stats['wins']}")
-        self._update_console_stats()
 
     def add_loss(self):
         """Record a loss"""
         self.stats["losses"] += 1
         self.log(f"💔 Loss recorded. Total losses: {self.stats['losses']}")
-        self._update_console_stats()
 
     def add_card_played(self):
         """Record a card played"""
         self.stats["cards_played"] += 1
-        self._update_console_stats()
 
     def get_cards_played(self) -> int:
         """Get total cards played"""
@@ -210,7 +168,6 @@ class Logger:
         """Record an app restart"""
         self.stats["restarts"] += 1
         self.log(f"🔄 App restart recorded. Total restarts: {self.stats['restarts']}")
-        self._update_console_stats()
 
     # Action system for user interaction
     def request_user_action(self, text: str, callback_function=None):
@@ -240,23 +197,18 @@ class Logger:
         stats = self.get_stats()
         runtime = self.calc_time_since_start()
 
-        # Remove from console display
-        if self.use_console_display and self.console_display:
-            self.console_display.remove_emulator(self.instance_name)
-
-        # Log traditional summary if console display is not being used
-        if not self.use_console_display:
-            self.log("=" * 50)
-            self.log("SESSION SUMMARY")
-            self.log("=" * 50)
-            self.log(f"Runtime: {runtime}")
-            self.log(
-                f"Battles: {stats['total_battles']} (W: {stats['wins']}, L: {stats['losses']})"
-            )
-            self.log(f"Win Rate: {stats['win_rate']}")
-            self.log(f"Cards Played: {stats['cards_played']}")
-            self.log(f"Chests Opened: {stats['chests_opened']}")
-            self.log(f"Cards Upgraded: {stats['cards_upgraded']}")
-            self.log(f"App Restarts: {stats['restarts']}")
-            self.log(f"Failures: {stats['failures']}")
-            self.log("=" * 50)
+        # Log session summary
+        self.log("=" * 50)
+        self.log("SESSION SUMMARY")
+        self.log("=" * 50)
+        self.log(f"Runtime: {runtime}")
+        self.log(
+            f"Battles: {stats['total_battles']} (W: {stats['wins']}, L: {stats['losses']})"
+        )
+        self.log(f"Win Rate: {stats['win_rate']}")
+        self.log(f"Cards Played: {stats['cards_played']}")
+        self.log(f"Chests Opened: {stats['chests_opened']}")
+        self.log(f"Cards Upgraded: {stats['cards_upgraded']}")
+        self.log(f"App Restarts: {stats['restarts']}")
+        self.log(f"Failures: {stats['failures']}")
+        self.log("=" * 50)

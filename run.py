@@ -2,7 +2,6 @@
 """
 Quick start script for the Clash Royale Bot
 Usage:
-  python run.py --gui                    # Launch GUI
   python run.py --headless              # Run single emulator headless
   python run.py --multi 3               # Run 3 emulators
   python run.py --upgrade               # Run card upgrade mode
@@ -21,7 +20,6 @@ def parse_args():
 
     # Mode selection (mutually exclusive)
     mode_group = parser.add_mutually_exclusive_group(required=True)
-    mode_group.add_argument("--gui", action="store_true", help="Launch GUI interface")
     mode_group.add_argument(
         "--headless", action="store_true", help="Run single emulator in headless mode"
     )
@@ -64,10 +62,6 @@ def main_entry():
         if args.status:
             print("🔍 Checking MEmu emulator status...")
             main("status")
-
-        elif args.gui:
-            print("🎮 Launching Clash Royale Bot GUI...")
-            main("gui")
 
         elif args.headless:
             print(f"🤖 Starting single emulator on port {args.port}")

@@ -26,20 +26,13 @@ class EmulatorBot:
     Refactored Bot instance for a single emulator using PyClashBot architecture
     """
 
-    def __init__(
-        self, device_id, instance_name, use_console_display=True, logger_callback=None
-    ):
+    def __init__(self, device_id, instance_name):
         self.device_id = device_id
         self.instance_name = instance_name
         self.running = True
 
         # Initialize logger first
-        self.logger = Logger(
-            instance_name,
-            timed=True,
-            use_console_display=use_console_display,
-            callback=logger_callback,
-        )
+        self.logger = Logger(instance_name, timed=True)
 
         # Initialize emulator controller
         self.emulator = MemuController(device_id, instance_name)
