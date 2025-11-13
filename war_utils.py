@@ -22,7 +22,8 @@ def find_available_war_battles(bot, screenshot):
         ('normal_battle', 'Normal Battle'),
         ('touchdown_war', 'Touchdown War'),
         ('2x_war', '2x War'),
-        ('col_war', 'Collection War')
+        # ('col_war', 'Collection War'),
+        ('ragewar', 'Rage War')
     ]
     
     available = []

@@ -51,7 +51,8 @@ REF_IMAGES = {
     "rampup": "templates/RampUp.png",
     "touchdown_war": "templates/TouchdownWar.png",
     "2x_war": "templates/2xWar.png",
-    "col_war": "templates/ColWar.png"
+    "col_war": "templates/ColWar.png",
+    "ragewar": "templates/ragewar.png"
 }
 
 # Confidence threshold for image matching
