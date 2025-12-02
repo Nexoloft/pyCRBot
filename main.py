@@ -46,6 +46,7 @@ def verify_template_images():
 
 def run_upgrade_mode(instances):
     """Run the bot in card upgrade mode"""
+    global shutdown_requested
     print(f"\n🔧 UPGRADE MODE: Will upgrade cards on {len(instances)} MEmu instance(s)")
     print("Starting card upgrade bots...")
 
@@ -87,6 +88,7 @@ def run_upgrade_mode(instances):
 
 def run_battlepass_mode(instances):
     """Run the bot in battlepass claiming mode"""
+    global shutdown_requested
     print(
         f"\n🎁 BATTLEPASS MODE: Will claim battlepass rewards on {len(instances)} MEmu instance(s)"
     )
@@ -129,6 +131,7 @@ def run_battlepass_mode(instances):
 
 def run_war_mode(instances, max_battles=0):
     """Run the bot in clan war mode"""
+    global shutdown_requested
     print(f"\n⚔️ WAR MODE: Will play clan wars on {len(instances)} MEmu instance(s)")
     if max_battles > 0:
         print(f"🎯 Battle limit: {max_battles} per emulator")
@@ -191,6 +194,7 @@ def run_war_mode(instances, max_battles=0):
 
 def run_battle_mode(instances, max_battles=0):
     """Run the bot in battle mode"""
+    global shutdown_requested
     print(
         f"\n⚔️ BATTLE MODE: Found {len(instances)} MEmu instance(s). Starting battle bots..."
     )
