@@ -13,6 +13,7 @@ from battle_runner import BattleRunner
 from war_runner import WarRunner
 from emulator_utils import detect_memu_instances
 from config import REF_IMAGES
+from dashboard import dashboard
 
 
 # Global variable to handle graceful shutdown
@@ -24,6 +25,7 @@ def signal_handler(signum, frame):
     global shutdown_requested
     print("\nShutdown signal received. Stopping all bots...")
     shutdown_requested = True
+    dashboard.stop()
 
 
 def verify_template_images():
@@ -47,6 +49,9 @@ def run_upgrade_mode(instances):
     print(f"\n🔧 UPGRADE MODE: Will upgrade cards on {len(instances)} MEmu instance(s)")
     print("Starting card upgrade bots...")
 
+    # Start dashboard
+    dashboard.start()
+
     # Create bot instances for upgrading
     bots = []
     for device_id, instance_name in instances:
@@ -59,8 +64,6 @@ def run_upgrade_mode(instances):
             # Submit upgrade tasks
             futures = [executor.submit(bot.auto_upgrade_cards) for bot in bots]
 
-            print(f"All {len(bots)} upgrade bots started! Press Ctrl+C to stop.")
-
             # Wait for completion or shutdown
             while not shutdown_requested:
                 time.sleep(1)
@@ -68,22 +71,18 @@ def run_upgrade_mode(instances):
                 # Check if all futures completed
                 completed = [f for f in futures if f.done()]
                 if len(completed) == len(futures):
-                    print("All upgrade bots completed their tasks.")
                     break
 
         except KeyboardInterrupt:
-            print("\nKeyboard interrupt received")
+            # Handled by signal handler, but just in case
+            shutdown_requested = True
         finally:
             # Stop all bots
-            print("Stopping all upgrade bots...")
             for bot in bots:
                 bot.stop()
 
-            # Wait for threads to finish
-            print("Waiting for upgrade bots to finish...")
             executor.shutdown(wait=True)
-
-            print("All upgrade bots stopped. Goodbye!")
+            dashboard.stop()
 
 
 def run_battlepass_mode(instances):
@@ -92,6 +91,9 @@ def run_battlepass_mode(instances):
         f"\n🎁 BATTLEPASS MODE: Will claim battlepass rewards on {len(instances)} MEmu instance(s)"
     )
     print("Starting battlepass claiming bots...")
+
+    # Start dashboard
+    dashboard.start()
 
     # Create bot instances for claiming battlepass
     bots = []
@@ -105,10 +107,6 @@ def run_battlepass_mode(instances):
             # Submit battlepass claiming tasks
             futures = [executor.submit(bot.auto_claim_battlepass) for bot in bots]
 
-            print(
-                f"All {len(bots)} battlepass claiming bots started! Press Ctrl+C to stop."
-            )
-
             # Wait for completion or shutdown
             while not shutdown_requested:
                 time.sleep(1)
@@ -116,22 +114,17 @@ def run_battlepass_mode(instances):
                 # Check if all futures completed
                 completed = [f for f in futures if f.done()]
                 if len(completed) == len(futures):
-                    print("All battlepass claiming bots completed their tasks.")
                     break
 
         except KeyboardInterrupt:
-            print("\nKeyboard interrupt received")
+             shutdown_requested = True
         finally:
             # Stop all bots
-            print("Stopping all battlepass claiming bots...")
             for bot in bots:
                 bot.stop()
 
-            # Wait for threads to finish
-            print("Waiting for battlepass claiming bots to finish...")
             executor.shutdown(wait=True)
-
-            print("All battlepass claiming bots stopped. Goodbye!")
+            dashboard.stop()
 
 
 def run_war_mode(instances, max_battles=0):
@@ -139,6 +132,9 @@ def run_war_mode(instances, max_battles=0):
     print(f"\n⚔️ WAR MODE: Will play clan wars on {len(instances)} MEmu instance(s)")
     if max_battles > 0:
         print(f"🎯 Battle limit: {max_battles} per emulator")
+
+    # Start dashboard
+    dashboard.start()
 
     # Create bot instances
     bots = []
@@ -169,8 +165,6 @@ def run_war_mode(instances, max_battles=0):
             # Submit war tasks
             futures = [executor.submit(runner.run_war_loop) for runner in war_runners]
 
-            print(f"All {len(war_runners)} war bots started! Press Ctrl+C to stop.")
-
             # Wait for completion or shutdown
             while not shutdown_requested:
                 time.sleep(1)
@@ -185,16 +179,14 @@ def run_war_mode(instances, max_battles=0):
                         break
 
         except KeyboardInterrupt:
-            pass
+             shutdown_requested = True
         finally:
             # Stop all bots
             for bot in bots:
                 bot.stop()
 
-            # Wait for threads to finish
             executor.shutdown(wait=True)
-
-            print("All war bots stopped. Goodbye!")
+            dashboard.stop()
 
 
 def run_battle_mode(instances, max_battles=0):
@@ -204,6 +196,9 @@ def run_battle_mode(instances, max_battles=0):
     )
     if max_battles > 0:
         print(f"🎯 Battle limit: {max_battles} per emulator")
+
+    # Start dashboard
+    dashboard.start()
 
     # Create bot instances
     bots = []
@@ -252,19 +247,15 @@ def run_battle_mode(instances, max_battles=0):
                     if remaining == 0:
                         break
 
-                    # For partial failures, just continue with remaining bots
-
         except KeyboardInterrupt:
-            pass
+             shutdown_requested = True
         finally:
             # Stop all bots
             for bot in bots:
                 bot.stop()
 
-            # Wait for threads to finish
             executor.shutdown(wait=True)
-
-            print("All bots stopped. Goodbye!")
+            dashboard.stop()
 
 
 def main(mode="battle", **kwargs):
