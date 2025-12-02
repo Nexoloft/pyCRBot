@@ -260,3 +260,40 @@ class BattleLogic:
             available_cards.append(i)
 
         return available_cards
+
+    def detect_evolution_cards(self, screenshot, blue_rgb=(12, 132, 219), tolerance=COLOR_TOLERANCE):
+        """Detect which card slots are 'Evolution' cards.
+
+        Rule: The pixel directly above a card (Y = 515) is examined. If that pixel
+        does NOT match the standard blue color RGB(12,132,219) within tolerance,
+        the slot is considered an Evolution card (e.g. purple / dark gray indicators).
+
+        Returns:
+            list[int]: indices of card slots considered Evolution cards.
+        """
+        if screenshot is None:
+            return []
+
+        evo_slots = []
+
+        for idx, (x, _) in enumerate(CARD_SLOTS):
+            try:
+                # Screenshot is numpy array indexed by [y, x]
+                pixel = screenshot[515, x]
+
+                # If the pixel does NOT match the blue color, it's an Evolution card
+                is_blue = self.detector.pixel_matches_color(
+                    pixel, blue_rgb, tolerance=tolerance, format="bgr"
+                )
+
+                if not is_blue:
+                    evo_slots.append(idx)
+
+            except (IndexError, TypeError):
+                # Out-of-bounds or invalid screenshot - skip this slot
+                continue
+
+        if evo_slots:
+            print(f"[{self.instance_name}] Evolution cards detected at slots: {evo_slots}")
+
+        return evo_slots

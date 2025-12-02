@@ -333,8 +333,20 @@ class EmulatorBot:
             self.logger.change_status("No cards ready yet...")
             return False
 
-        # Use battle strategy to select card
-        card_index = self.battle_strategy.select_card_index(available_cards)
+        # Check for Evolution cards and always play them immediately if available
+        evo_slots = self.battle_logic.detect_evolution_cards(screenshot)
+        evo_available = [i for i in available_cards if i in evo_slots]
+
+        if evo_available:
+            # Prioritize evolution card(s) immediately, ignoring repetition rules
+            card_index = random.choice(evo_available)
+            # Update strategy history so we still track played cards
+            if card_index not in self.battle_strategy.last_three_cards:
+                self.battle_strategy.last_three_cards.append(card_index)
+            self.logger.change_status(f"Evolution card detected - prioritizing slot {card_index}")
+        else:
+            # Use battle strategy to select card
+            card_index = self.battle_strategy.select_card_index(available_cards)
         play_position = self.battle_strategy.get_strategic_play_position()
 
         self.logger.change_status(f"Playing card {card_index} at {play_position}")
