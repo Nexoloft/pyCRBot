@@ -14,7 +14,6 @@ class Dashboard:
         self.emulators = {}
         self.lock = Lock()
         self.live = None
-        self.layout = Layout()
         self.started = False
 
     def add_emulator(self, name):
@@ -31,8 +30,6 @@ class Dashboard:
                     },
                     "logs": deque(maxlen=20)
                 }
-                # Re-generate layout structure when a new emulator is added
-                self._update_layout_structure()
 
     def update_stats(self, name, key, value):
         with self.lock:
@@ -50,15 +47,7 @@ class Dashboard:
                 timestamp = time.strftime("%H:%M:%S")
                 self.emulators[name]["logs"].append(f"[{timestamp}] {message}")
 
-    def _update_layout_structure(self):
-        # Create a split for logs based on number of emulators
-        # We'll use a simple vertical split (columns) for logs
-        # If there are many emulators (e.g. > 3), maybe we should use a grid?
-        # For now, let's stick to columns for up to 4, then maybe rows?
-        # The user wants it "split up by emulator".
-        pass
-
-    def get_renderable(self):
+    def __rich__(self):
         with self.lock:
             # 1. Stats Table
             table = Table(expand=True, box=box.ROUNDED, show_header=True, header_style="bold magenta")
@@ -81,7 +70,6 @@ class Dashboard:
                 )
 
             # 2. Logs Area
-            # We will create a Table with one row, and N columns, where each cell is a Panel of logs
             log_table = Table.grid(expand=True, padding=1)
 
             names = sorted(self.emulators.keys())
@@ -117,10 +105,7 @@ class Dashboard:
 
     def start(self):
         if not self.started:
-            # Using screen=True creates a full screen application experience.
-            # Live needs a callable that returns a renderable, or a renderable.
-            # If we pass a callable as the first argument, it works.
-            self.live = Live(self.get_renderable, refresh_per_second=4, screen=True)
+            self.live = Live(self, refresh_per_second=4, screen=True)
             self.live.start()
             self.started = True
 
