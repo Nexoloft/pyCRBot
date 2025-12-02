@@ -3,7 +3,12 @@ Battle loop logic and game coordination - refactored with PyClashBot architectur
 """
 
 import time
-from config import INACTIVITY_TIMEOUT, DEFAULT_TIMEOUTS, MAX_RECOVERY_ATTEMPTS, MAX_BATTLE_END_ATTEMPTS
+from config import (
+    INACTIVITY_TIMEOUT,
+    DEFAULT_TIMEOUTS,
+    MAX_RECOVERY_ATTEMPTS,
+    MAX_BATTLE_END_ATTEMPTS,
+)
 
 
 class BattleRunner:
@@ -244,23 +249,31 @@ class BattleRunner:
             screenshot = self.bot.take_screenshot()
             if screenshot is not None:
                 # Check for play again or ok buttons (indicates battle is over)
-                play_again_pos, play_again_conf = self.bot.find_template("play_again", screenshot)
+                play_again_pos, play_again_conf = self.bot.find_template(
+                    "play_again", screenshot
+                )
                 ok_pos, ok_conf = self.bot.find_template("ok_button", screenshot)
-                
-                if (play_again_pos and play_again_conf > 0.7) or (ok_pos and ok_conf > 0.7):
+
+                if (play_again_pos and play_again_conf > 0.7) or (
+                    ok_pos and ok_conf > 0.7
+                ):
                     # Battle is definitely over if we see these buttons
                     if not_in_battle_start is None:
                         not_in_battle_start = time.time()
-                        self.logger.log("Post-battle buttons detected, battle ending...")
+                        self.logger.log(
+                            "Post-battle buttons detected, battle ending..."
+                        )
                     elif time.time() - not_in_battle_start > 2:
-                        self.logger.log("Battle confirmed over (post-battle buttons found)")
+                        self.logger.log(
+                            "Battle confirmed over (post-battle buttons found)"
+                        )
                         break
                 elif not self.bot.battle_logic.is_in_battle(screenshot):
                     # Also check regular is_in_battle as fallback
                     if not_in_battle_start is None:
                         not_in_battle_start = time.time()
                         self.logger.log("Battle might be ending, verifying...")
-                    elif time.time() - not_in_battle_start > 3:
+                    elif time.time() - not_in_battle_start > 10:
                         self.logger.log("Battle confirmed over")
                         break
                 else:
