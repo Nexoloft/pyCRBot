@@ -9,3 +9,4 @@ pyee==13.0.0
 Pygments==2.19.2
 pytest==8.4.2
 typing_extensions==4.15.0
+rich
