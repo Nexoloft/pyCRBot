@@ -46,6 +46,7 @@ REF_IMAGES = {
     "confirm": "templates/Confirm.png",
     "2xElixir": "templates/2xElixir.png",
     "ClaimRewards": "templates/ClaimRewards.png",
+    "Cancel": "templates/Cancel.png",
     "normal_battle": "templates/NormalBattle.png",
     "sudden_death": "templates/SuddenDeath.png",
     "rampup": "templates/RampUp.png",
@@ -161,7 +162,7 @@ SCREENSHOT_DELAY = 0.05
 
 # Default timeouts
 DEFAULT_TIMEOUTS = {
-    "battle_start": 45,
+    "battle_start": 60,
     "wait_for_elixir": 30,
     "post_battle": 60,
     "war_battle_search": 60,

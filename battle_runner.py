@@ -240,35 +240,31 @@ class BattleRunner:
             current_time = time.time()
             battle_elapsed = current_time - battle_start_time
 
-            # Check if still in battle
-            if not self.bot.is_in_battle():
-                # First time detecting "not in battle"
-                if not_in_battle_start is None:
-                    not_in_battle_start = time.time()
-                    self.logger.log(
-                        "Battle end detected, waiting 15 seconds to confirm..."
-                    )
-
-                # Check if we've been "not in battle" for 15 seconds
-                not_in_battle_duration = time.time() - not_in_battle_start
-                if not_in_battle_duration >= 15:
-                    self.logger.log(
-                        f"Battle ended - not in battle for {not_in_battle_duration:.1f}s"
-                    )
-                    break
+            # Check if battle is over by looking for post-battle buttons
+            screenshot = self.bot.take_screenshot()
+            if screenshot is not None:
+                # Check for play again or ok buttons (indicates battle is over)
+                play_again_pos, play_again_conf = self.bot.find_template("play_again", screenshot)
+                ok_pos, ok_conf = self.bot.find_template("ok_button", screenshot)
+                
+                if (play_again_pos and play_again_conf > 0.7) or (ok_pos and ok_conf > 0.7):
+                    # Battle is definitely over if we see these buttons
+                    if not_in_battle_start is None:
+                        not_in_battle_start = time.time()
+                        self.logger.log("Post-battle buttons detected, battle ending...")
+                    elif time.time() - not_in_battle_start > 2:
+                        self.logger.log("Battle confirmed over (post-battle buttons found)")
+                        break
+                elif not self.bot.battle_logic.is_in_battle(screenshot):
+                    # Also check regular is_in_battle as fallback
+                    if not_in_battle_start is None:
+                        not_in_battle_start = time.time()
+                        self.logger.log("Battle might be ending, verifying...")
+                    elif time.time() - not_in_battle_start > 3:
+                        self.logger.log("Battle confirmed over")
+                        break
                 else:
-                    # Still waiting for confirmation
-                    self.logger.change_status(
-                        f"Confirming battle end... ({not_in_battle_duration:.1f}s / 15s)"
-                    )
-                    time.sleep(1)
-                    continue
-            else:
-                # Back in battle, reset the timer
-                if not_in_battle_start is not None:
-                    self.logger.log(
-                        "False alarm - still in battle, resetting end detection timer"
-                    )
+                    # Reset the timer if we're back in battle
                     not_in_battle_start = None
 
             # Check for battle timeout (5 minutes max)

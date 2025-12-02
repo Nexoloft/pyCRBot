@@ -523,6 +523,7 @@ class EmulatorBot:
                         screenshot = self.take_screenshot()
                         if screenshot is not None:
                             try:
+                                # First check for ClaimRewards
                                 claim_rewards_pos, confidence = self.find_template(
                                     "ClaimRewards", screenshot
                                 )
@@ -545,6 +546,40 @@ class EmulatorBot:
                                         self.logger.log(
                                             "Failed to click ClaimRewards button, continuing..."
                                         )
+                                else:
+                                    # If we didn't find ClaimRewards, check for Cancel popup and handle it
+                                    cancel_pos, cancel_conf = self.find_template(
+                                        "Cancel", screenshot
+                                    )
+                                    if cancel_pos:
+                                        self.logger.log(
+                                            f"Found Cancel popup (confidence: {cancel_conf:.2f}), clicking to dismiss..."
+                                        )
+                                        if self.tap_screen(cancel_pos[0], cancel_pos[1]):
+                                            time.sleep(1)
+                                            # After dismissing, re-check for ClaimRewards immediately
+                                            screenshot_after = self.take_screenshot()
+                                            if screenshot_after is not None:
+                                                claim_rewards_pos2, confidence2 = self.find_template(
+                                                    "ClaimRewards", screenshot_after
+                                                )
+                                                if claim_rewards_pos2:
+                                                    claims_count += 1
+                                                    self.logger.log(
+                                                        f"Claim #{claims_count}: Found ClaimRewards button (confidence: {confidence2:.2f}) after dismissing Cancel"
+                                                    )
+                                                    if self.tap_screen(
+                                                        claim_rewards_pos2[0], claim_rewards_pos2[1]
+                                                    ):
+                                                        self.logger.log(
+                                                            "Successfully clicked ClaimRewards button after Cancel"
+                                                        )
+                                                        time.sleep(2)
+                                                        found_claim_button = True
+                                                    else:
+                                                        self.logger.log(
+                                                            "Failed to click ClaimRewards button after Cancel, continuing..."
+                                                        )
                             except Exception as template_error:
                                 if (
                                     click_attempts % 20 == 0
@@ -592,6 +627,29 @@ class EmulatorBot:
                                         )
                                         found_next_claim = True
                                         break
+                                    else:
+                                        # Check for 'Cancel' popup during next claim search
+                                        cancel_pos2, cancel_conf2 = self.find_template(
+                                            "Cancel", screenshot
+                                        )
+                                        if cancel_pos2:
+                                            self.logger.log(
+                                                f"Found Cancel popup while searching next claim (confidence: {cancel_conf2:.2f}), clicking to dismiss..."
+                                            )
+                                            if self.tap_screen(cancel_pos2[0], cancel_pos2[1]):
+                                                time.sleep(0.8)
+                                                # After dismissing Cancel, re-check for ClaimRewards
+                                                screenshot_after_cancel = self.take_screenshot()
+                                                if screenshot_after_cancel is not None:
+                                                    next_claim_pos2, next_confidence2 = self.find_template(
+                                                        "ClaimRewards", screenshot_after_cancel
+                                                    )
+                                                    if next_claim_pos2:
+                                                        self.logger.log(
+                                                            f"Found next ClaimRewards button (confidence: {next_confidence2:.2f}) after dismissing Cancel"
+                                                        )
+                                                        found_next_claim = True
+                                                        break
                                 except Exception as template_error:
                                     self.logger.log(
                                         f"Template detection error during next claim search: {template_error}"

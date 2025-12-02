@@ -72,7 +72,7 @@ class BattleLogic:
         return False
 
     def is_in_battle(self, screenshot):
-        """Check if we're in battle using multiple detection methods"""
+        """Check if we're in battle using template detection and elixir detection"""
         # Method 1: Template detection
         position, confidence = self.detector.find_template("in_battle", screenshot)
         if position:
@@ -81,36 +81,23 @@ class BattleLogic:
             )
             return True
 
-        # Method 2: Pixel-based detection
+        # Method 2: Check for purple elixir (indicates we're in battle)
         if screenshot is None:
             return False
 
         try:
-            # Check 1v1 battle pixels
-            pixels_1v1 = []
-            for coords in BATTLE_PIXELS_1V1["pixels"]:
-                pixels_1v1.append(screenshot[coords[0]][coords[1]])
-
-            if self.detector.all_pixels_match(
-                pixels_1v1,
-                BATTLE_PIXELS_1V1["colors"],
-                tolerance=ELIXIR_COLOR_TOLERANCE,
-            ):
-                print(f"[{self.instance_name}] In 1v1 battle detected (pixel check)")
-                return True
-
-            # Check 2v2 battle pixels
-            pixels_2v2 = []
-            for coords in BATTLE_PIXELS_2V2["pixels"]:
-                pixels_2v2.append(screenshot[coords[0]][coords[1]])
-
-            if self.detector.all_pixels_match(
-                pixels_2v2,
-                BATTLE_PIXELS_2V2["colors"],
-                tolerance=ELIXIR_COLOR_TOLERANCE,
-            ):
-                print(f"[{self.instance_name}] In 2v2 battle detected (pixel check)")
-                return True
+            # Check for purple elixir pixels (more reliable than white UI elements)
+            for coords in [[115, 618], [114, 615]]:
+                pixel = screenshot[coords[0]][coords[1]]
+                pixel_bgr = [int(pixel[0]), int(pixel[1]), int(pixel[2])]
+                pixel_rgb = [pixel_bgr[2], pixel_bgr[1], pixel_bgr[0]]
+                
+                for purple_color in PURPLE_COLORS:
+                    if self.detector.pixel_matches_color_rgb(
+                        pixel_rgb, purple_color, tolerance=ELIXIR_COLOR_TOLERANCE
+                    ):
+                        print(f"[{self.instance_name}] In battle detected (purple elixir pixel check)")
+                        return True
 
         except (IndexError, TypeError):
             # Fall back to template detection if pixel check fails
