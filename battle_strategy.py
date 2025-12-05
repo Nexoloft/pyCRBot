@@ -214,13 +214,13 @@ class BattleStrategy:
         phase = self.get_battle_phase()
 
         if phase == "early":
-            return random.uniform(1.5, 2.5)
-        elif phase == "single":
-            return random.uniform(1.0, 2.0)
-        elif phase == "double":
             return random.uniform(0.8, 1.5)
+        elif phase == "single":
+            return random.uniform(0.5, 1.0)
+        elif phase == "double":
+            return random.uniform(0.3, 0.7)
         else:  # triple
-            return random.uniform(0.5, 1.2)
+            return random.uniform(0.2, 0.5)
 
     def reset(self):
         """Reset the strategy for a new battle"""
