@@ -4,6 +4,8 @@ __pycache__/
 *.log
 *.tmp
 *.swp
+.emulators/__pycache__/
+emulators/__pycache__/
 
 # VSCode / IDE
 .vscode/
